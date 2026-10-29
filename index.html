@@ -45,11 +45,8 @@
 
       <!-- Selector de Actividad -->
       <div id="selection-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-sm space-y-4">
-        <div class="flex justify-between items-center">
+        <div>
           <h3 class="text-base font-semibold text-slate-200">Nueva Actividad</h3>
-          <button onclick="openCategoryModal()" class="w-7 h-7 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg flex items-center justify-center text-xs shadow-sm active:scale-90 transition-transform" title="Gestionar Categorías y Actividades">
-            ✏️
-          </button>
         </div>
         
         <div>
@@ -74,9 +71,16 @@
           ▶️ Fichar Inicio
         </button>
 
-        <div class="pt-2 border-t border-slate-700/60">
-          <button onclick="toggleManualEntry()" class="w-full text-xs text-slate-400 hover:text-strava py-2 font-medium flex items-center justify-center gap-1">
-            <span>➕ Añadir registro retroactivo</span>
+        <div class="pt-2 border-t border-slate-700/60 space-y-1.5">
+          <!-- Botón Añadir Actividad (Retroactivo) -->
+          <button onclick="toggleManualEntry()" class="w-full text-base font-semibold text-slate-300 hover:text-strava py-2 flex items-center justify-center gap-1 transition-colors">
+            <span>➕ Añadir actividad</span>
+          </button>
+          
+          <!-- Botón Editar Categorías / Actividades con Lápiz -->
+          <button onclick="openCategoryModal()" class="w-full text-xs text-slate-400 hover:text-strava py-1.5 font-medium flex items-center justify-center gap-1.5 transition-colors">
+            <span>✏️</span>
+            <span>Editar Categorías / Actividades</span>
           </button>
         </div>
       </div>
