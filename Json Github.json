@@ -1,0 +1,21 @@
+{
+  "name": "Time Tracker - Vitae Veritas",
+  "short_name": "TimeTracker",
+  "description": "App personal de control de tiempo y registro de actividades",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "[suspicious link removed]",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "[suspicious link removed]",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

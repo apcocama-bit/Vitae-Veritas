@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Time Tracker - Vitae Veritas</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: { colors: { strava: '#f97316' } } }
+    }
+  </script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen pb-24 font-sans antialiased selection:bg-orange-500/30">
+
+  <!-- Header -->
+  <header class="bg-slate-800/90 backdrop-blur-md border-b border-slate-700 p-4 text-center sticky top-0 z-10 shadow-md">
+    <h1 class="text-xl font-bold tracking-wide text-strava flex items-center justify-center gap-2">
+      ⏱️ <span>Control de Tiempo</span>
+    </h1>
+  </header>
+
+  <main class="max-w-md mx-auto p-4 space-y-6">
+
+    <!-- TAB 1: FICHERO -->
+    <section id="tab-timer" class="tab-content space-y-5">
+      
+      <!-- Fichaje Activo -->
+      <div id="active-card" class="hidden bg-slate-800/90 border-2 border-strava rounded-2xl p-6 text-center shadow-lg animate-pulse">
+        <span class="text-xs uppercase tracking-widest text-strava font-semibold">En curso</span>
+        <h2 id="active-activity-title" class="text-2xl font-bold mt-1 text-white">---</h2>
+        <p id="active-category-subtitle" class="text-sm text-slate-400">---</p>
+        <p id="active-notes-subtitle" class="text-xs text-slate-300 italic my-2 bg-slate-900/60 p-2 rounded-lg hidden"></p>
+        <div id="timer-display" class="text-5xl font-mono font-extrabold my-4 text-orange-400">00:00:00</div>
+        <button onclick="stopTimer()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 px-6 rounded-xl text-lg shadow-md transition-all active:scale-95">
+          ⏹️ Fichar Fin
+        </button>
+      </div>
+
+      <!-- Selector de Actividad -->
+      <div id="selection-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-sm space-y-4">
+        <h3 class="text-base font-semibold text-slate-200">Nueva Actividad</h3>
+        
+        <div>
+          <label class="block text-xs text-slate-400 mb-1.5 font-medium">Seleccionar Actividad</label>
+          <select id="activity-select" onchange="autoAssignCategory()" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-100 focus:outline-none focus:border-strava">
+            <optgroup label="1. Trabajo">
+              <option value="Trabajo|Leer">Leer (Trabajo)</option>
+              <option value="Trabajo|Desarrollar">Desarrollar</option>
+              <option value="Trabajo|Hablar">Hablar</option>
+              <option value="Trabajo|Planificar">Planificar</option>
+              <option value="Trabajo|Trabajar">Trabajar</option>
+            </optgroup>
+            <optgroup label="2. Cuerpo">
+              <option value="Cuerpo|Calistenia">Calistenia</option>
+              <option value="Cuerpo|Yoga">Yoga</option>
+              <option value="Cuerpo|Correr">Correr</option>
+              <option value="Cuerpo|Otros">Otros (Cuerpo)</option>
+            </optgroup>
+            <optgroup label="3. Mente">
+              <option value="Mente|Leer">Leer (Mente)</option>
+              <option value="Mente|Meditar">Meditar</option>
+              <option value="Mente|Escuchar música">Escuchar música</option>
+              <option value="Mente|Parar">Parar</option>
+            </optgroup>
+            <optgroup label="4. Social">
+              <option value="Social|Andrea">Andrea</option>
+              <option value="Social|Familia Andrea">Familia Andrea</option>
+              <option value="Social|Familia Yo">Familia Yo</option>
+              <option value="Social|Amigos">Amigos</option>
+              <option value="Social|Mascotas">Mascotas</option>
+            </optgroup>
+            <optgroup label="5. Casa">
+              <option value="Casa|Animales">Animales</option>
+              <option value="Casa|Leira">Leira</option>
+              <option value="Casa|Diseño">Diseño</option>
+              <option value="Casa|Compra">Compra</option>
+              <option value="Casa|Reforma">Reforma</option>
+            </optgroup>
+            <optgroup label="6. Otros">
+              <option value="Otros|Jugar">Jugar</option>
+              <option value="Otros|Youtube">Youtube</option>
+              <option value="Otros|Tocar música">Tocar música</option>
+              <option value="Otros|Vibecoding">Vibecoding</option>
+              <option value="Otros|TV y Cine">TV y Cine</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="flex items-center space-x-2">
+          <span class="text-xs text-slate-400">Categoría:</span>
+          <span id="assigned-category-badge" class="bg-slate-900 border border-slate-700 text-xs font-bold px-2.5 py-1 rounded-md">
+            Trabajo
+          </span>
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 mb-1.5 font-medium">Notas / Detalles (Opcional)</label>
+          <input type="text" id="notes-input" placeholder="Ej: Proyecto X, Capítulo 3..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-100 text-sm focus:outline-none focus:border-strava">
+        </div>
+
+        <button onclick="startTimer()" class="w-full bg-strava hover:bg-orange-600 text-white font-bold py-3.5 px-6 rounded-xl text-lg shadow-md transition-all active:scale-95">
+          ▶️ Fichar Inicio
+        </button>
+
+        <div class="pt-2 border-t border-slate-700/60">
+          <button onclick="toggleManualEntry()" class="w-full text-xs text-slate-400 hover:text-strava py-2 font-medium flex items-center justify-center gap-1">
+            <span>➕ ¿Olvidaste fichar? Añadir actividad pasada</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Formulario de Entrada Manual -->
+      <div id="manual-entry-card" class="hidden bg-slate-800 border border-slate-700 rounded-2xl p-5 space-y-4">
+        <h3 class="text-sm font-bold text-slate-200">Añadir Registro Retroactivo</h3>
+        
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Actividad</label>
+          <select id="manual-activity-select" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-100">
+            <!-- Rellenado por JS -->
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Inicio</label>
+            <input type="datetime-local" id="manual-start" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-100">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Fin</label>
+            <input type="datetime-local" id="manual-end" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-100">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Notas</label>
+          <input type="text" id="manual-notes" placeholder="Notas..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-100">
+        </div>
+
+        <div class="flex gap-2">
+          <button onclick="saveManualRecord()" class="flex-1 bg-strava hover:bg-orange-600 text-white text-xs font-bold py-2.5 rounded-xl">Guardar</button>
+          <button onclick="toggleManualEntry()" class="bg-slate-700 text-slate-300 text-xs py-2.5 px-4 rounded-xl">Cancelar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: OBJETIVOS -->
+    <section id="tab-goals" class="tab-content hidden space-y-5">
+      <div class="flex justify-between items-center">
+        <h3 class="text-lg font-bold text-slate-200">Tus Objetivos</h3>
+        <button onclick="toggleGoalForm()" class="bg-strava hover:bg-orange-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg">+ Nuevo Meta</button>
+      </div>
+
+      <!-- Formulario Nuevo Objetivo -->
+      <div id="goal-form-card" class="hidden bg-slate-800 border border-slate-700 rounded-2xl p-4 space-y-3">
+        <h4 class="text-sm font-semibold text-slate-200">Crear Nuevo Objetivo</h4>
+        
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Tipo de Meta</label>
+          <select id="goal-target-type" onchange="updateGoalTargetOptions()" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs">
+            <option value="category">Por Categoría</option>
+            <option value="activity">Por Actividad</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Seleccionar Objetivo</label>
+          <select id="goal-target-value" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs"></select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Frecuencia</label>
+            <select id="goal-frequency" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs">
+              <option value="day">Diario</option>
+              <option value="week">Semanal</option>
+              <option value="month">Mensual</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Horas Meta</label>
+            <input type="number" id="goal-target-hours" step="0.5" placeholder="Ej: 5" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs">
+          </div>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button onclick="saveGoal()" class="flex-1 bg-strava text-white text-xs font-bold py-2 rounded-xl">Guardar Objetivo</button>
+          <button onclick="toggleGoalForm()" class="bg-slate-700 text-slate-300 text-xs py-2 px-3 rounded-xl">Cancelar</button>
+        </div>
+      </div>
+
+      <!-- Lista de Objetivos -->
+      <div id="goals-list" class="space-y-3">
+        <p class="text-slate-500 text-center py-8 text-sm">No has configurado objetivos aún.</p>
+      </div>
+    </section>
+
+    <!-- TAB 3: HISTÓRICO -->
+    <section id="tab-history" class="tab-content hidden space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="text-lg font-bold text-slate-200">Historial</h3>
+        <button onclick="clearHistory()" class="text-xs text-red-400 hover:underline">Borrar todo</button>
+      </div>
+      <div id="history-list" class="space-y-2">
+        <p class="text-slate-500 text-center py-8 text-sm">No hay registros aún.</p>
+      </div>
+    </section>
+
+    <!-- TAB 4: ESTADÍSTICAS -->
+    <section id="tab-stats" class="tab-content hidden space-y-5">
+      <h3 class="text-lg font-bold text-slate-200">Resumen & Gráficas</h3>
+      
+      <!-- Filtros -->
+      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-3 space-y-3">
+        <div class="flex justify-between items-center text-xs font-semibold text-slate-400">
+          <span>TIEMPO:</span>
+          <div class="space-x-1">
+            <button onclick="setPeriod('day')" id="btn-p-day" class="px-2 py-1 rounded-lg">Día</button>
+            <button onclick="setPeriod('week')" id="btn-p-week" class="px-2 py-1 rounded-lg">Semana</button>
+            <button onclick="setPeriod('month')" id="btn-p-month" class="px-2 py-1 rounded-lg">Mes</button>
+            <button onclick="setPeriod('year')" id="btn-p-year" class="px-2 py-1 rounded-lg">Año</button>
+            <button onclick="setPeriod('all')" id="btn-p-all" class="px-2 py-1 rounded-lg">Todo</button>
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center text-xs font-semibold text-slate-400 border-t border-slate-700/60 pt-2.5">
+          <span>AGRUPAR:</span>
+          <div class="space-x-1">
+            <button onclick="setGroupBy('category')" id="btn-g-category" class="px-3 py-1 rounded-lg">Categorías</button>
+            <button onclick="setGroupBy('activity')" id="btn-g-activity" class="px-3 py-1 rounded-lg">Actividades</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gráfico -->
+      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 shadow-sm">
+        <div id="chart-title" class="text-xs font-semibold text-slate-400 mb-2">Distribución</div>
+        <div class="relative h-64">
+          <canvas id="statsChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Totales -->
+      <div id="stats-totals" class="grid grid-cols-2 gap-3"></div>
+    </section>
+
+  </main>
+
+  <!-- MODAL DE EDICIÓN -->
+  <div id="edit-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 w-full max-w-sm space-y-4">
+      <h3 class="text-base font-bold text-slate-200">Editar Registro</h3>
+      <input type="hidden" id="edit-id">
+      
+      <div>
+        <label class="block text-xs text-slate-400 mb-1">Actividad</label>
+        <select id="edit-activity" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-100">
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs text-slate-400 mb-1">Notas</label>
+        <input type="text" id="edit-notes" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-100">
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button onclick="saveEditRecord()" class="flex-1 bg-strava text-white text-xs font-bold py-2.5 rounded-xl">Guardar Cambios</button>
+        <button onclick="closeEditModal()" class="bg-slate-700 text-slate-300 text-xs py-2.5 px-4 rounded-xl">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE CONFIRMACIÓN BORRAR -->
+  <div id="delete-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 w-full max-w-sm text-center space-y-4">
+      <div class="text-3xl">⚠️</div>
+      <h3 class="text-base font-bold text-slate-200">¿Borrar este registro?</h3>
+      <p class="text-xs text-slate-400">Esta acción no se puede deshacer.</p>
+      <input type="hidden" id="delete-id">
+      
+      <div class="flex gap-2 pt-2">
+        <button onclick="confirmDeleteRecord()" class="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2.5 rounded-xl">Sí, Borrar</button>
+        <button onclick="closeDeleteModal()" class="flex-1 bg-slate-700 text-slate-300 text-xs py-2.5 rounded-xl">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navegación Inferior (4 Pestañas) -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-slate-800/95 backdrop-blur-md border-t border-slate-700 flex justify-around p-2 z-20">
+    <button onclick="switchTab('timer')" id="nav-timer" class="flex flex-col items-center py-1 px-3 text-strava font-semibold text-[10px]">
+      <span class="text-lg">⏱️</span>
+      <span>Fichar</span>
+    </button>
+    <button onclick="switchTab('goals')" id="nav-goals" class="flex flex-col items-center py-1 px-3 text-slate-400 font-semibold text-[10px]">
+      <span class="text-lg">🎯</span>
+      <span>Objetivos</span>
+    </button>
+    <button onclick="switchTab('history')" id="nav-history" class="flex flex-col items-center py-1 px-3 text-slate-400 font-semibold text-[10px]">
+      <span class="text-lg">📋</span>
+      <span>Histórico</span>
+    </button>
+    <button onclick="switchTab('stats')" id="nav-stats" class="flex flex-col items-center py-1 px-3 text-slate-400 font-semibold text-[10px]">
+      <span class="text-lg">📊</span>
+      <span>Gráficas</span>
+    </button>
+  </nav>
+
+  <!-- Lógica JavaScript -->
+  <script>
+    const SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzVq-kFq9lq0d9qvmBBd1tu1niAX-m2aaVNEqCU-n7MCviyaLHTHfp1nP2NgiY_ZYGr/exec";
+
+    const CATEGORIES = {
+      "Trabajo": { color: "#f97316", items: ["Leer", "Desarrollar", "Hablar", "Planificar", "Trabajar"] },
+      "Cuerpo":  { color: "#3b82f6", items: ["Calistenia", "Yoga", "Correr", "Otros"] },
+      "Mente":   { color: "#06b6d4", items: ["Leer", "Meditar", "Escuchar música", "Parar"] },
+      "Social":  { color: "#eab308", items: ["Andrea", "Familia Andrea", "Familia Yo", "Amigos", "Mascotas"] },
+      "Casa":    { color: "#10b981", items: ["Animales", "Leira", "Diseño", "Compra", "Reforma"] },
+      "Otros":   { color: "#ef4444", items: ["Jugar", "Youtube", "Tocar música", "Vibecoding", "TV y Cine"] }
+    };
+
+    let activeTimer = JSON.parse(localStorage.getItem('tt_active')) || null;
+    let records = JSON.parse(localStorage.getItem('tt_records')) || [];
+    let goals = JSON.parse(localStorage.getItem('tt_goals')) || [];
+    let timerInterval = null;
+    let chartInstance = null;
+
+    let currentPeriod = 'week'; 
+    let currentGroupBy = 'category'; 
+    let selectedCategoryDrilldown = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      autoAssignCategory();
+      populateManualActivitySelect();
+      renderUI();
+      if (activeTimer) startTimerInterval();
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
+      }
+    });
+
+    function autoAssignCategory() {
+      const val = document.getElementById('activity-select').value;
+      const [category] = val.split('|');
+      const badge = document.getElementById('assigned-category-badge');
+      badge.innerText = category;
+      badge.style.color = CATEGORIES[category].color;
+    }
+
+    function populateManualActivitySelect() {
+      const manualSel = document.getElementById('manual-activity-select');
+      const editSel = document.getElementById('edit-activity');
+      let html = '';
+      Object.keys(CATEGORIES).forEach(cat => {
+        html += `<optgroup label="${cat}">`;
+        CATEGORIES[cat].items.forEach(act => {
+          html += `<option value="${cat}|${act}">${act} (${cat})</option>`;
+        });
+        html += `</optgroup>`;
+      });
+      manualSel.innerHTML = html;
+      editSel.innerHTML = html;
+    }
+
+    function startTimer() {
+      const val = document.getElementById('activity-select').value;
+      const [category, activity] = val.split('|');
+      const notes = document.getElementById('notes-input').value.trim();
+
+      activeTimer = { category, activity, notes, startTime: Date.now() };
+      localStorage.setItem('tt_active', JSON.stringify(activeTimer));
+      document.getElementById('notes-input').value = '';
+      startTimerInterval();
+      renderUI();
+    }
+
+    function startTimerInterval() {
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        const elapsedSec = Math.floor((Date.now() - activeTimer.startTime) / 1000);
+        document.getElementById('timer-display').innerText = formatSeconds(elapsedSec);
+      }, 1000);
+    }
+
+    function stopTimer() {
+      if (!activeTimer) return;
+      clearInterval(timerInterval);
+      const endTime = Date.now();
+      const durationSec = Math.floor((endTime - activeTimer.startTime) / 1000);
+
+      if (durationSec >= 3) {
+        const newRecord = {
+          id: Date.now(),
+          category: activeTimer.category,
+          activity: activeTimer.activity,
+          notes: activeTimer.notes || '',
+          startTime: activeTimer.startTime,
+          endTime: endTime,
+          durationSec: durationSec
+        };
+        records.unshift(newRecord);
+        localStorage.setItem('tt_records', JSON.stringify(records));
+        sendToGoogleSheets(newRecord);
+      }
+
+      activeTimer = null;
+      localStorage.removeItem('tt_active');
+      renderUI();
+    }
+
+    function toggleManualEntry() {
+      document.getElementById('manual-entry-card').classList.toggle('hidden');
+    }
+
+    function saveManualRecord() {
+      const val = document.getElementById('manual-activity-select').value;
+      const [category, activity] = val.split('|');
+      const startVal = document.getElementById('manual-start').value;
+      const endVal = document.getElementById('manual-end').value;
+      const notes = document.getElementById('manual-notes').value.trim();
+
+      if (!startVal || !endVal) {
+        alert('Por favor selecciona hora de inicio y fin.');
+        return;
+      }
+
+      const startTime = new Date(startVal).getTime();
+      const endTime = new Date(endVal).getTime();
+      const durationSec = Math.floor((endTime - startTime) / 1000);
+
+      if (durationSec <= 0) {
+        alert('La hora de fin debe ser posterior a la de inicio.');
+        return;
+      }
+
+      const newRecord = {
+        id: Date.now(),
+        category,
+        activity,
+        notes,
+        startTime,
+        endTime,
+        durationSec
+      };
+
+      records.unshift(newRecord);
+      localStorage.setItem('tt_records', JSON.stringify(records));
+      sendToGoogleSheets(newRecord);
+
+      document.getElementById('manual-start').value = '';
+      document.getElementById('manual-end').value = '';
+      document.getElementById('manual-notes').value = '';
+      toggleManualEntry();
+      renderUI();
+    }
+
+    async function sendToGoogleSheets(record) {
+      if (!SHEETS_WEBHOOK_URL) return;
+      const startDate = new Date(record.startTime);
+      const endDate = new Date(record.endTime);
+      
+      const payload = {
+        fecha: startDate.toLocaleDateString('es-ES'),
+        horaInicio: startDate.toLocaleTimeString('es-ES'),
+        horaFin: endDate.toLocaleTimeString('es-ES'),
+        duracion: formatSeconds(record.durationSec),
+        categoria: record.category,
+        actividad: record.activity,
+        notas: record.notes || ''
+      };
+
+      try {
+        await fetch(SHEETS_WEBHOOK_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } catch (err) {
+        console.log('Error enviando a Google Sheets:', err);
+      }
+    }
+
+    function renderUI() {
+      const activeCard = document.getElementById('active-card');
+      const selectionCard = document.getElementById('selection-card');
+
+      if (activeTimer) {
+        activeCard.classList.remove('hidden');
+        selectionCard.classList.add('hidden');
+        document.getElementById('active-activity-title').innerText = activeTimer.activity;
+        document.getElementById('active-category-subtitle').innerText = activeTimer.category;
+        
+        const notesEl = document.getElementById('active-notes-subtitle');
+        if (activeTimer.notes) {
+          notesEl.innerText = '📝 ' + activeTimer.notes;
+          notesEl.classList.remove('hidden');
+        } else {
+          notesEl.classList.add('hidden');
+        }
+      } else {
+        activeCard.classList.add('hidden');
+        selectionCard.classList.remove('hidden');
+      }
+
+      renderHistory();
+      renderGoals();
+      renderStats();
+    }
+
+    function renderHistory() {
+      const list = document.getElementById('history-list');
+      if (records.length === 0) {
+        list.innerHTML = '<p class="text-slate-500 text-center py-8 text-sm">No hay registros aún.</p>';
+        return;
+      }
+
+      list.innerHTML = records.map(r => {
+        const dateStr = new Date(r.startTime).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+        const catColor = CATEGORIES[r.category]?.color || '#f97316';
+
+        return `
+          <div class="bg-slate-800 border border-slate-700 rounded-xl p-3 space-y-1">
+            <div class="flex justify-between items-center">
+              <div>
+                <span class="text-sm font-bold text-white">${r.activity}</span>
+                <span class="text-xs px-1.5 py-0.5 rounded ml-1 text-slate-900 font-semibold text-[10px]" style="background-color: ${catColor}">${r.category}</span>
+              </div>
+              <div class="flex items-center space-x-2">
+                <span class="text-xs font-mono font-bold text-strava mr-1">${formatSeconds(r.durationSec)}</span>
+                
+                <!-- Botón Editar 28px -->
+                <button onclick="openEditModal(${r.id})" class="w-7 h-7 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg flex items-center justify-center text-xs shadow-sm active:scale-90 transition-transform">
+                  ✏️
+                </button>
+                
+                <!-- Botón Borrar 28px -->
+                <button onclick="openDeleteModal(${r.id})" class="w-7 h-7 bg-red-950/60 border border-red-800/80 hover:bg-red-900 text-red-300 rounded-lg flex items-center justify-center text-xs shadow-sm active:scale-90 transition-transform">
+                  🗑️
+                </button>
+              </div>
+            </div>
+            ${r.notes ? `<div class="text-xs text-slate-300 italic bg-slate-900/40 p-1.5 rounded">📝 ${r.notes}</div>` : ''}
+            <div class="text-[10px] text-slate-500">${dateStr}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openEditModal(id) {
+      const record = records.find(r => r.id === id);
+      if (!record) return;
+      document.getElementById('edit-id').value = id;
+      document.getElementById('edit-activity').value = `${record.category}|${record.activity}`;
+      document.getElementById('edit-notes').value = record.notes || '';
+      document.getElementById('edit-modal').classList.remove('hidden');
+    }
+
+    function closeEditModal() {
+      document.getElementById('edit-modal').classList.add('hidden');
+    }
+
+    function saveEditRecord() {
+      const id = parseInt(document.getElementById('edit-id').value);
+      const val = document.getElementById('edit-activity').value;
+      const [category, activity] = val.split('|');
+      const notes = document.getElementById('edit-notes').value.trim();
+
+      const record = records.find(r => r.id === id);
+      if (record) {
+        record.category = category;
+        record.activity = activity;
+        record.notes = notes;
+        localStorage.setItem('tt_records', JSON.stringify(records));
+        renderUI();
+      }
+      closeEditModal();
+    }
+
+    function openDeleteModal(id) {
+      document.getElementById('delete-id').value = id;
+      document.getElementById('delete-modal').classList.remove('hidden');
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('delete-modal').classList.add('hidden');
+    }
+
+    function confirmDeleteRecord() {
+      const id = parseInt(document.getElementById('delete-id').value);
+      records = records.filter(r => r.id !== id);
+      localStorage.setItem('tt_records', JSON.stringify(records));
+      closeDeleteModal();
+      renderUI();
+    }
+
+    function clearHistory() {
+      if (confirm('¿Seguro que quieres borrar todos los registros?')) {
+        records = [];
+        localStorage.setItem('tt_records', JSON.stringify(records));
+        renderUI();
+      }
+    }
+
+    /* OBJETIVOS */
+    function toggleGoalForm() {
+      const card = document.getElementById('goal-form-card');
+      card.classList.toggle('hidden');
+      if (!card.classList.contains('hidden')) updateGoalTargetOptions();
+    }
+
+    function updateGoalTargetOptions() {
+      const type = document.getElementById('goal-target-type').value;
+      const valSelect = document.getElementById('goal-target-value');
+      let html = '';
+
+      if (type === 'category') {
+        Object.keys(CATEGORIES).forEach(c => {
+          html += `<option value="${c}">${c}</option>`;
+        });
+      } else {
+        Object.keys(CATEGORIES).forEach(cat => {
+          CATEGORIES[cat].items.forEach(act => {
+            html += `<option value="${act}">${act} (${cat})</option>`;
+          });
+        });
+      }
+      valSelect.innerHTML = html;
+    }
+
+    function saveGoal() {
+      const targetType = document.getElementById('goal-target-type').value;
+      const targetValue = document.getElementById('goal-target-value').value;
+      const frequency = document.getElementById('goal-frequency').value;
+      const targetHours = parseFloat(document.getElementById('goal-target-hours').value);
+
+      if (!targetHours || targetHours <= 0) {
+        alert('Ingresa una meta de horas válida.');
+        return;
+      }
+
+      goals.push({
+        id: Date.now(),
+        targetType,
+        targetValue,
+        frequency,
+        targetHours
+      });
+
+      localStorage.setItem('tt_goals', JSON.stringify(goals));
+      toggleGoalForm();
+      renderGoals();
+    }
+
+    function deleteGoal(id) {
+      goals = goals.filter(g => g.id !== id);
+      localStorage.setItem('tt_goals', JSON.stringify(goals));
+      renderGoals();
+    }
+
+    function renderGoals() {
+      const container = document.getElementById('goals-list');
+      if (goals.length === 0) {
+        container.innerHTML = '<p class="text-slate-500 text-center py-8 text-sm">No has configurado objetivos aún.</p>';
+        return;
+      }
+
+      const now = new Date();
+
+      container.innerHTML = goals.map(g => {
+        // Filtrar registros según frecuencia
+        const filtered = records.filter(r => {
+          const rDate = new Date(r.startTime);
+          if (g.frequency === 'day') {
+            return rDate.toDateString() === now.toDateString();
+          } else if (g.frequency === 'week') {
+            return rDate >= new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          } else if (g.frequency === 'month') {
+            return rDate.getMonth() === now.getMonth() && rDate.getFullYear() === now.getFullYear();
+          }
+          return true;
+        });
+
+        // Sumar tiempo
+        const totalSec = filtered.reduce((acc, r) => {
+          const match = (g.targetType === 'category') ? (r.category === g.targetValue) : (r.activity === g.targetValue);
+          return match ? acc + r.durationSec : acc;
+        }, 0);
+
+        const currentHours = totalSec / 3600;
+        const percent = Math.min(Math.round((currentHours / g.targetHours) * 100), 100);
+        const isCompleted = percent >= 100;
+
+        const freqText = { day: 'Diario', week: 'Semanal', month: 'Mensual' }[g.frequency];
+
+        return `
+          <div class="bg-slate-800 border ${isCompleted ? 'border-emerald-500/80 bg-emerald-950/10' : 'border-slate-700'} rounded-2xl p-4 space-y-3">
+            <div class="flex justify-between items-start">
+              <div>
+                <div class="text-xs text-slate-400 font-medium">${g.targetType === 'category' ? 'Categoría' : 'Actividad'} • ${freqText}</div>
+                <div class="text-base font-bold text-white mt-0.5">${g.targetValue}</div>
+              </div>
+              <div class="flex items-center gap-2">
+                ${isCompleted ? '<span class="bg-emerald-500/20 text-emerald-400 text-xs font-bold px-2.5 py-1 rounded-full border border-emerald-500/30">✓ Completado</span>' : ''}
+                <button onclick="deleteGoal(${g.id})" class="text-slate-500 hover:text-red-400 text-xs">✕</button>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs font-mono mb-1">
+                <span class="text-slate-300">${currentHours.toFixed(1)} hrs</span>
+                <span class="text-slate-400">Meta: ${g.targetHours} hrs</span>
+              </div>
+              <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden border border-slate-700/50">
+                <div class="h-2.5 rounded-full transition-all duration-500 ${isCompleted ? 'bg-emerald-500' : 'bg-strava'}" style="width: ${percent}%"></div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /* ESTADÍSTICAS */
+    function setPeriod(p) {
+      currentPeriod = p;
+      ['day', 'week', 'month', 'year', 'all'].forEach(k => {
+        const btn = document.getElementById('btn-p-' + k);
+        btn.className = (k === p) ? 'px-2 py-1 rounded-lg bg-slate-700 text-white font-bold' : 'px-2 py-1 rounded-lg text-slate-400';
+      });
+      renderStats();
+    }
+
+    function setGroupBy(g) {
+      currentGroupBy = g;
+      selectedCategoryDrilldown = null;
+      document.getElementById('btn-g-category').className = (g === 'category') ? 'px-3 py-1 rounded-lg bg-strava text-white font-bold' : 'px-3 py-1 rounded-lg text-slate-400';
+      document.getElementById('btn-g-activity').className = (g === 'activity') ? 'px-3 py-1 rounded-lg bg-strava text-white font-bold' : 'px-3 py-1 rounded-lg text-slate-400';
+      renderStats();
+    }
+
+    function getFilteredRecords() {
+      const now = new Date();
+      return records.filter(r => {
+        const rDate = new Date(r.startTime);
+        if (currentPeriod === 'day') return rDate.toDateString() === now.toDateString();
+        if (currentPeriod === 'week') return rDate >= new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        if (currentPeriod === 'month') return rDate.getMonth() === now.getMonth() && rDate.getFullYear() === now.getFullYear();
+        if (currentPeriod === 'year') return rDate.getFullYear() === now.getFullYear();
+        return true;
+      });
+    }
+
+    function renderStats() {
+      const filtered = getFilteredRecords();
+      const totals = {};
+
+      if (selectedCategoryDrilldown) {
+        // Modo Drill-down por categoría seleccionada
+        filtered.filter(r => r.category === selectedCategoryDrilldown).forEach(r => {
+          totals[r.activity] = (totals[r.activity] || 0) + r.durationSec;
+        });
+        document.getElementById('chart-title').innerText = `Desglose: ${selectedCategoryDrilldown} (Toca para cerrar)`;
+      } else {
+        filtered.forEach(r => {
+          const key = (currentGroupBy === 'category') ? r.category : r.activity;
+          totals[key] = (totals[key] || 0) + r.durationSec;
+        });
+        document.getElementById('chart-title').innerText = currentGroupBy === 'category' ? 'Por Categorías (Toca para desglosar)' : 'Por Actividades';
+      }
+
+      const totalsContainer = document.getElementById('stats-totals');
+      const keys = Object.keys(totals);
+
+      if (keys.length === 0) {
+        totalsContainer.innerHTML = '<p class="col-span-2 text-center text-slate-500 text-sm py-4">Sin datos para este período.</p>';
+      } else {
+        totalsContainer.innerHTML = keys.map(k => {
+          const catColor = CATEGORIES[k]?.color || '#f97316';
+          return `
+            <div onclick="toggleDrilldown('${k}')" class="bg-slate-800 border border-slate-700 hover:border-slate-500 rounded-xl p-3 cursor-pointer transition-all">
+              <div class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${catColor}"></span>
+                <span class="text-xs text-slate-300 font-medium truncate">${k}</span>
+              </div>
+              <div class="text-base font-bold font-mono text-strava mt-1">${formatSeconds(totals[k])}</div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Chart.js
+      const ctx = document.getElementById('statsChart').getContext('2d');
+      if (chartInstance) chartInstance.destroy();
+
+      const bgColors = keys.map(k => CATEGORIES[k]?.color || '#f97316');
+
+      chartInstance = new Chart(ctx, {
+        type: (currentGroupBy === 'category' && !selectedCategoryDrilldown) ? 'doughnut' : 'bar',
+        data: {
+          labels: keys,
+          datasets: [{
+            label: 'Minutos',
+            data: Object.values(totals).map(sec => (sec / 60).toFixed(1)),
+            backgroundColor: bgColors
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          onClick: (e, elements) => {
+            if (elements.length > 0 && currentGroupBy === 'category') {
+              const index = elements[0].index;
+              toggleDrilldown(keys[index]);
+            }
+          },
+          plugins: {
+            legend: {
+              display: (currentGroupBy === 'category' && !selectedCategoryDrilldown),
+              labels: { color: '#94a3b8', font: { size: 11 } }
+            }
+          },
+          scales: (currentGroupBy === 'activity' || selectedCategoryDrilldown) ? {
+            x: { ticks: { color: '#94a3b8' } },
+            y: { ticks: { color: '#94a3b8' } }
+          } : {}
+        }
+      });
+    }
+
+    function toggleDrilldown(key) {
+      if (CATEGORIES[key]) {
+        selectedCategoryDrilldown = (selectedCategoryDrilldown === key) ? null : key;
+        renderStats();
+      } else if (selectedCategoryDrilldown) {
+        selectedCategoryDrilldown = null;
+        renderStats();
+      }
+    }
+
+    function formatSeconds(sec) {
+      const hrs = Math.floor(sec / 3600);
+      const mins = Math.floor((sec % 3600) / 60);
+      const secs = sec % 60;
+      return [hrs, mins, secs].map(v => v < 10 ? "0" + v : v).join(":");
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById('tab-' + tab).classList.remove('hidden');
+
+      document.querySelectorAll('nav button').forEach(el => {
+        el.classList.remove('text-strava');
+        el.classList.add('text-slate-400');
+      });
+      document.getElementById('nav-' + tab).classList.add('text-strava');
+      document.getElementById('nav-' + tab).classList.remove('text-slate-400');
+
+      if (tab === 'stats') renderStats();
+      if (tab === 'goals') renderGoals();
+    }
+  </script>
+</body>
+</html>
