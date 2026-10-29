@@ -45,51 +45,16 @@
 
       <!-- Selector de Actividad -->
       <div id="selection-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-sm space-y-4">
-        <h3 class="text-base font-semibold text-slate-200">Nueva Actividad</h3>
+        <div class="flex justify-between items-center">
+          <h3 class="text-base font-semibold text-slate-200">Nueva Actividad</h3>
+          <button onclick="openCategoryModal()" class="w-7 h-7 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg flex items-center justify-center text-xs shadow-sm active:scale-90 transition-transform" title="Gestionar Categorías y Actividades">
+            ✏️
+          </button>
+        </div>
         
         <div>
           <label class="block text-xs text-slate-400 mb-1.5 font-medium">Seleccionar Actividad</label>
           <select id="activity-select" onchange="autoAssignCategory()" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-100 focus:outline-none focus:border-strava">
-            <optgroup label="1. Trabajo">
-              <option value="Trabajo|Leer">Leer (Trabajo)</option>
-              <option value="Trabajo|Desarrollar">Desarrollar</option>
-              <option value="Trabajo|Hablar">Hablar</option>
-              <option value="Trabajo|Planificar">Planificar</option>
-              <option value="Trabajo|Trabajar">Trabajar</option>
-            </optgroup>
-            <optgroup label="2. Cuerpo">
-              <option value="Cuerpo|Calistenia">Calistenia</option>
-              <option value="Cuerpo|Yoga">Yoga</option>
-              <option value="Cuerpo|Correr">Correr</option>
-              <option value="Cuerpo|Otros">Otros (Cuerpo)</option>
-            </optgroup>
-            <optgroup label="3. Mente">
-              <option value="Mente|Leer">Leer (Mente)</option>
-              <option value="Mente|Meditar">Meditar</option>
-              <option value="Mente|Escuchar música">Escuchar música</option>
-              <option value="Mente|Parar">Parar</option>
-            </optgroup>
-            <optgroup label="4. Social">
-              <option value="Social|Andrea">Andrea</option>
-              <option value="Social|Familia Andrea">Familia Andrea</option>
-              <option value="Social|Familia Yo">Familia Yo</option>
-              <option value="Social|Amigos">Amigos</option>
-              <option value="Social|Mascotas">Mascotas</option>
-            </optgroup>
-            <optgroup label="5. Casa">
-              <option value="Casa|Animales">Animales</option>
-              <option value="Casa|Leira">Leira</option>
-              <option value="Casa|Diseño">Diseño</option>
-              <option value="Casa|Compra">Compra</option>
-              <option value="Casa|Reforma">Reforma</option>
-            </optgroup>
-            <optgroup label="6. Otros">
-              <option value="Otros|Jugar">Jugar</option>
-              <option value="Otros|Youtube">Youtube</option>
-              <option value="Otros|Tocar música">Tocar música</option>
-              <option value="Otros|Vibecoding">Vibecoding</option>
-              <option value="Otros|TV y Cine">TV y Cine</option>
-            </optgroup>
           </select>
         </div>
 
@@ -111,7 +76,7 @@
 
         <div class="pt-2 border-t border-slate-700/60">
           <button onclick="toggleManualEntry()" class="w-full text-xs text-slate-400 hover:text-strava py-2 font-medium flex items-center justify-center gap-1">
-            <span>➕ Añadir actividad</span>
+            <span>➕ Añadir registro retroactivo</span>
           </button>
         </div>
       </div>
@@ -254,7 +219,52 @@
 
   </main>
 
-  <!-- MODAL DE EDICIÓN -->
+  <!-- MODAL DE GESTIÓN DE CATEGORÍAS Y ACTIVIDADES -->
+  <div id="category-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 w-full max-w-sm space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+        <h3 class="text-base font-bold text-slate-200">Gestionar Categorías & Actividades</h3>
+        <button onclick="closeCategoryModal()" class="text-slate-400 hover:text-white font-bold text-sm">✕</button>
+      </div>
+
+      <!-- Añadir Categoría -->
+      <div class="space-y-2 bg-slate-900/60 p-3 rounded-xl border border-slate-700/50">
+        <h4 class="text-xs font-bold text-strava uppercase tracking-wider">➕ Añadir Categoría</h4>
+        <input type="text" id="new-category-name" placeholder="Nombre de categoría" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-100">
+        <div class="flex items-center gap-2">
+          <label class="text-xs text-slate-400">Color:</label>
+          <input type="color" id="new-category-color" value="#f97316" class="h-8 w-12 bg-transparent cursor-pointer rounded border border-slate-700 p-0.5">
+          <button onclick="addNewCategory()" class="flex-1 bg-strava hover:bg-orange-600 text-white font-bold text-xs py-2 rounded-lg transition-all">
+            Crear
+          </button>
+        </div>
+      </div>
+
+      <!-- Añadir Actividad -->
+      <div class="space-y-2 bg-slate-900/60 p-3 rounded-xl border border-slate-700/50">
+        <h4 class="text-xs font-bold text-strava uppercase tracking-wider">➕ Añadir Actividad</h4>
+        <select id="add-activity-category-select" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-100"></select>
+        <div class="flex gap-2">
+          <input type="text" id="new-activity-name" placeholder="Nombre de actividad" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-100">
+          <button onclick="addNewActivity()" class="bg-strava hover:bg-orange-600 text-white font-bold text-xs px-3 py-2 rounded-lg transition-all">
+            Añadir
+          </button>
+        </div>
+      </div>
+
+      <!-- Lista para eliminar elementos existentes -->
+      <div class="space-y-2 bg-slate-900/60 p-3 rounded-xl border border-slate-700/50">
+        <h4 class="text-xs font-bold text-red-400 uppercase tracking-wider">🗑️ Eliminar Elementos</h4>
+        <div id="manage-delete-list" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+          <!-- Se rellena dinámicamente -->
+        </div>
+      </div>
+
+      <button onclick="closeCategoryModal()" class="w-full bg-slate-700 text-slate-300 text-xs py-2.5 rounded-xl font-medium">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- MODAL DE EDICIÓN DE REGISTRO -->
   <div id="edit-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 w-full max-w-sm space-y-4">
       <h3 class="text-base font-bold text-slate-200">Editar Registro</h3>
@@ -328,7 +338,7 @@
   <script>
     const SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzVq-kFq9lq0d9qvmBBd1tu1niAX-m2aaVNEqCU-n7MCviyaLHTHfp1nP2NgiY_ZYGr/exec";
 
-    const CATEGORIES = {
+    const DEFAULT_CATEGORIES = {
       "Trabajo": { color: "#f97316", items: ["Leer", "Desarrollar", "Hablar", "Planificar", "Trabajar"] },
       "Cuerpo":  { color: "#3b82f6", items: ["Calistenia", "Yoga", "Correr", "Otros"] },
       "Mente":   { color: "#06b6d4", items: ["Leer", "Meditar", "Escuchar música", "Parar"] },
@@ -336,6 +346,8 @@
       "Casa":    { color: "#10b981", items: ["Animales", "Leira", "Diseño", "Compra", "Reforma"] },
       "Otros":   { color: "#ef4444", items: ["Jugar", "Youtube", "Tocar música", "Vibecoding", "TV y Cine"] }
     };
+
+    let CATEGORIES = JSON.parse(localStorage.getItem('tt_categories')) || DEFAULT_CATEGORIES;
 
     let activeTimer = JSON.parse(localStorage.getItem('tt_active')) || null;
     let records = JSON.parse(localStorage.getItem('tt_records')) || [];
@@ -348,14 +360,162 @@
     let selectedCategoryDrilldown = null;
 
     document.addEventListener('DOMContentLoaded', () => {
+      populateActivitySelects();
       autoAssignCategory();
-      populateManualActivitySelect();
       renderUI();
       if (activeTimer) startTimerInterval();
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
       }
     });
+
+    function saveCategories() {
+      localStorage.setItem('tt_categories', JSON.stringify(CATEGORIES));
+    }
+
+    function populateActivitySelects() {
+      const mainSel = document.getElementById('activity-select');
+      const manualSel = document.getElementById('manual-activity-select');
+      const editSel = document.getElementById('edit-activity');
+
+      const currentMainValue = mainSel ? mainSel.value : null;
+
+      let html = '';
+      let index = 1;
+      Object.keys(CATEGORIES).forEach(cat => {
+        html += `<optgroup label="${index}. ${cat}">`;
+        CATEGORIES[cat].items.forEach(act => {
+          html += `<option value="${cat}|${act}">${act}${cat === act ? '' : ' (' + cat + ')'}</option>`;
+        });
+        html += `</optgroup>`;
+        index++;
+      });
+
+      if (mainSel) mainSel.innerHTML = html;
+      if (manualSel) manualSel.innerHTML = html;
+      if (editSel) editSel.innerHTML = html;
+
+      if (currentMainValue && mainSel.querySelector(`option[value="${currentMainValue}"]`)) {
+        mainSel.value = currentMainValue;
+      }
+    }
+
+    /* MODAL GESTIÓN */
+    function openCategoryModal() {
+      renderManageDeleteList();
+      const catSelect = document.getElementById('add-activity-category-select');
+      catSelect.innerHTML = Object.keys(CATEGORIES).map(c => `<option value="${c}">${c}</option>`).join('');
+      document.getElementById('category-modal').classList.remove('hidden');
+    }
+
+    function closeCategoryModal() {
+      document.getElementById('category-modal').classList.add('hidden');
+    }
+
+    function renderManageDeleteList() {
+      const container = document.getElementById('manage-delete-list');
+      let html = '';
+
+      Object.keys(CATEGORIES).forEach(cat => {
+        html += `
+          <div class="bg-slate-900 p-2 rounded-lg border border-slate-800 space-y-1.5">
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-bold text-white flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full" style="background-color: ${CATEGORIES[cat].color}"></span>
+                ${cat}
+              </span>
+              <button onclick="deleteCategory('${cat}')" class="text-[10px] bg-red-950/80 hover:bg-red-900 text-red-300 px-2 py-0.5 rounded border border-red-800/60">Borrar Categoría</button>
+            </div>
+            <div class="pl-3 space-y-1">
+        `;
+        CATEGORIES[cat].items.forEach(act => {
+          html += `
+            <div class="flex justify-between items-center text-xs text-slate-400">
+              <span>• ${act}</span>
+              <button onclick="deleteActivity('${cat}', '${act}')" class="text-[10px] text-red-400 hover:text-red-300">✕ Quitar</button>
+            </div>
+          `;
+        });
+        html += `</div></div>`;
+      });
+
+      container.innerHTML = html || '<p class="text-xs text-slate-500 text-center">No hay categorías.</p>';
+    }
+
+    function addNewCategory() {
+      const nameInput = document.getElementById('new-category-name');
+      const colorInput = document.getElementById('new-category-color');
+
+      const name = nameInput.value.trim();
+      const color = colorInput.value;
+
+      if (!name) {
+        alert('Escribe el nombre de la categoría.');
+        return;
+      }
+
+      if (CATEGORIES[name]) {
+        alert('Esa categoría ya existe.');
+        return;
+      }
+
+      CATEGORIES[name] = { color: color, items: [] };
+      saveCategories();
+      populateActivitySelects();
+      renderManageDeleteList();
+
+      nameInput.value = '';
+      autoAssignCategory();
+    }
+
+    function deleteCategory(catName) {
+      if (confirm(`¿Borrar la categoría "${catName}" y todas sus actividades?`)) {
+        delete CATEGORIES[catName];
+        saveCategories();
+        populateActivitySelects();
+        renderManageDeleteList();
+        autoAssignCategory();
+      }
+    }
+
+    function addNewActivity() {
+      const catSelect = document.getElementById('add-activity-category-select');
+      const actInput = document.getElementById('new-activity-name');
+
+      const category = catSelect.value;
+      const activity = actInput.value.trim();
+
+      if (!activity) {
+        alert('Escribe el nombre de la actividad.');
+        return;
+      }
+
+      if (!CATEGORIES[category]) {
+        alert('La categoría seleccionada no existe.');
+        return;
+      }
+
+      if (CATEGORIES[category].items.includes(activity)) {
+        alert('Esa actividad ya existe en esta categoría.');
+        return;
+      }
+
+      CATEGORIES[category].items.push(activity);
+      saveCategories();
+      populateActivitySelects();
+      renderManageDeleteList();
+
+      actInput.value = '';
+    }
+
+    function deleteActivity(catName, actName) {
+      if (confirm(`¿Quitar la actividad "${actName}"?`)) {
+        CATEGORIES[catName].items = CATEGORIES[catName].items.filter(a => a !== actName);
+        saveCategories();
+        populateActivitySelects();
+        renderManageDeleteList();
+      }
+    }
 
     function getActivityColor(key) {
       if (CATEGORIES[key]) {
@@ -379,29 +539,19 @@
 
     function autoAssignCategory() {
       const val = document.getElementById('activity-select').value;
+      if (!val) return;
       const [category] = val.split('|');
       const badge = document.getElementById('assigned-category-badge');
       badge.innerText = category;
-      badge.style.color = CATEGORIES[category].color;
-    }
-
-    function populateManualActivitySelect() {
-      const manualSel = document.getElementById('manual-activity-select');
-      const editSel = document.getElementById('edit-activity');
-      let html = '';
-      Object.keys(CATEGORIES).forEach(cat => {
-        html += `<optgroup label="${cat}">`;
-        CATEGORIES[cat].items.forEach(act => {
-          html += `<option value="${cat}|${act}">${act} (${cat})</option>`;
-        });
-        html += `</optgroup>`;
-      });
-      manualSel.innerHTML = html;
-      editSel.innerHTML = html;
+      badge.style.color = CATEGORIES[category]?.color || '#f97316';
     }
 
     function startTimer() {
       const val = document.getElementById('activity-select').value;
+      if (!val) {
+        alert('Selecciona una actividad para fichar.');
+        return;
+      }
       const [category, activity] = val.split('|');
       const notes = document.getElementById('notes-input').value.trim();
 
@@ -452,6 +602,7 @@
 
     function saveManualRecord() {
       const val = document.getElementById('manual-activity-select').value;
+      if (!val) return;
       const [category, activity] = val.split('|');
       const startVal = document.getElementById('manual-start').value;
       const endVal = document.getElementById('manual-end').value;
