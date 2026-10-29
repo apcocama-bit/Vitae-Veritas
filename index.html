@@ -530,23 +530,26 @@
         const res = await fetch(SHEETS_WEBHOOK_URL);
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
-          const existingIds = new Set(records.map(r => r.id));
           let added = 0;
           data.forEach(item => {
-            if (!existingIds.has(item.id)) {
+            const idx = records.findIndex(r => r.id === item.id);
+            if (idx === -1) {
               records.push(item);
+              added++;
+            } else {
+              records[idx] = item;
               added++;
             }
           });
           records.sort((a, b) => b.startTime - a.startTime);
           localStorage.setItem('tt_records', JSON.stringify(records));
           renderUI();
-          alert(`Sincronización completada. ${added} registros recuperados.`);
+          alert(`Sincronización completada. ${added} registros recuperados/actualizados.`);
         } else {
-          alert('No se encontraron registros nuevos en la nube.');
+          alert('No se encontraron registros en la nube.');
         }
       } catch (err) {
-        alert('Para usar la carga desde la nube, asegúrate de actualizar el código en Google Apps Script con la función doGet.');
+        alert('Error al conectar con la nube. Revisa haber publicado la nueva versión en Google Apps Script.');
       } finally {
         if (btn) btn.innerText = '🔄 Cargar de la nube';
       }
