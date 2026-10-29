@@ -726,18 +726,21 @@
       }
     }
 
-    // Función crucial para evitar que las fechas cambien de día por la zona horaria
+    // Función robusta para leer texto "DD/MM/YYYY" y "HH:mm:ss" sin errores
     function parseLocalDate(fechaStr, horaStr) {
       if (!fechaStr) return Date.now();
-      var partsF = fechaStr.toString().split('/');
-      if (partsF.length !== 3) return Date.now();
+      var partsF = fechaStr.toString().trim().split('/');
+      if (partsF.length !== 3) {
+        var dAlt = new Date(fechaStr);
+        return !isNaN(dAlt.getTime()) ? dAlt.getTime() : Date.now();
+      }
       var day = parseInt(partsF[0], 10);
       var month = parseInt(partsF[1], 10) - 1;
       var year = parseInt(partsF[2], 10);
 
       var hours = 0, minutes = 0, seconds = 0;
       if (horaStr) {
-        var partsH = horaStr.toString().split(':');
+        var partsH = horaStr.toString().trim().split(':');
         hours = parseInt(partsH[0], 10) || 0;
         minutes = parseInt(partsH[1], 10) || 0;
         seconds = parseInt(partsH[2], 10) || 0;
