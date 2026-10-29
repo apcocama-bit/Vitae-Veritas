@@ -34,9 +34,9 @@
       
       <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-36 bg-slate-800 border border-slate-700 rounded-xl shadow-xl z-30 py-1.5 space-y-1">
         <div class="px-3 py-1 text-[10px] uppercase font-bold text-slate-400 border-b border-slate-700">Usuario Activo</div>
-        <button onclick="selectUser('Andrés')" class="w-full text-left px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 flex justify-between items-center">
-          <span>Andrés</span>
-          <span id="user-check-Andrés" class="text-strava text-xs">✓</span>
+        <button onclick="selectUser('Andres')" class="w-full text-left px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 flex justify-between items-center">
+          <span>Andres</span>
+          <span id="user-check-Andres" class="text-strava text-xs">✓</span>
         </button>
         <button onclick="selectUser('Andrea')" class="w-full text-left px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 flex justify-between items-center">
           <span>Andrea</span>
@@ -67,7 +67,7 @@
       <div id="selection-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-sm space-y-4">
         <div class="flex justify-between items-center">
           <h3 class="text-base font-semibold text-slate-200">Nueva Actividad</h3>
-          <span id="current-user-badge" class="bg-strava/20 text-strava text-[10px] font-bold px-2 py-0.5 rounded-full border border-strava/30">Andrés</span>
+          <span id="current-user-badge" class="bg-strava/20 text-strava text-[10px] font-bold px-2 py-0.5 rounded-full border border-strava/30">Andres</span>
         </div>
         
         <div>
@@ -412,8 +412,7 @@
       "Otros":   { color: "#ef4444", items: ["Jugar", "Youtube", "Tocar música", "Vibecoding", "TV y Cine"] }
     };
 
-    // GESTIÓN DE USUARIOS Y DATOS SEPARADOS AISLADOS
-    let currentUser = localStorage.getItem('tt_current_user') || 'Andrés';
+    let currentUser = localStorage.getItem('tt_current_user') || 'Andres';
 
     let CATEGORIES = {};
     let activeTimer = null;
@@ -439,7 +438,6 @@
     }
 
     function loadUserData() {
-      // Usamos copias independientes para evitar cruces de referencias de objetos predeterminados
       const savedCategories = localStorage.getItem(getKey('tt_categories'));
       CATEGORIES = savedCategories ? JSON.parse(savedCategories) : JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
 
@@ -450,8 +448,7 @@
 
       document.getElementById('current-user-badge').innerText = currentUser;
       
-      // Actualizar marcas en el selector de usuario
-      document.getElementById('user-check-Andrés').classList.toggle('hidden', currentUser !== 'Andrés');
+      document.getElementById('user-check-Andres').classList.toggle('hidden', currentUser !== 'Andres');
       document.getElementById('user-check-Andrea').classList.toggle('hidden', currentUser !== 'Andrea');
 
       populateActivitySelects();
@@ -493,7 +490,7 @@
       Object.keys(CATEGORIES).forEach(cat => {
         html += `<optgroup label="${index}. ${cat}">`;
         CATEGORIES[cat].items.forEach(act => {
-          html += `<option value="${cat}|${act}">${act}${cat === cat ? '' : ''}</option>`;
+          html += `<option value="${cat}|${act}">${act}</option>`;
         });
         html += `</optgroup>`;
         index++;
@@ -740,12 +737,35 @@
         if (Array.isArray(data) && data.length > 0) {
           let added = 0;
           data.forEach(item => {
-            const idx = records.findIndex(r => r.id === item.id);
+            // Aseguramos que item.startTime sea numérico o tratamos de convertir la fecha de la hoja
+            let parsedStart = item.startTime;
+            if (!parsedStart && item.fecha && item.horaInicio) {
+              // Intento de reconstrucción si viene plano de la hoja de cálculo
+              let parts = item.fecha.split('/');
+              if (parts.length === 3) {
+                parsedStart = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T${item.horaInicio}`).getTime();
+              }
+            }
+            if (!parsedStart || isNaN(parsedStart)) {
+              parsedStart = Date.now(); // Fallback seguro para evitar Invalid Date
+            }
+
+            const cleanItem = {
+              id: item.id || Date.now() + Math.random(),
+              category: item.category || item.categoria || 'Trabajo',
+              activity: item.activity || item.actividad || 'General',
+              notes: item.notes || item.notas || '',
+              startTime: parsedStart,
+              endTime: parsedStart + (item.durationSec || 0) * 1000,
+              durationSec: item.durationSec || 0
+            };
+
+            const idx = records.findIndex(r => r.id === cleanItem.id);
             if (idx === -1) {
-              records.push(item);
+              records.push(cleanItem);
               added++;
             } else {
-              records[idx] = item;
+              records[idx] = cleanItem;
               added++;
             }
           });
@@ -918,7 +938,15 @@
       }
 
       list.innerHTML = records.map(r => {
-        const dateStr = new Date(r.startTime).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+        // Validacion robusta para evitar Invalid Date si r.startTime no es un número válido
+        let dateObj = new Date(r.startTime);
+        let dateStr = "Fecha no disponible";
+        if (!isNaN(dateObj.getTime())) {
+          dateStr = dateObj.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+        } else if (r.fecha && r.horaInicio) {
+          dateStr = `${r.fecha} - ${r.horaInicio}`;
+        }
+
         const catColor = CATEGORIES[r.category]?.color || '#f97316';
 
         return `
@@ -943,6 +971,7 @@
 
     function formatForDatetimeLocal(timestamp) {
       const d = new Date(timestamp);
+      if (isNaN(d.getTime())) return '';
       const pad = (n) => String(n).padStart(2, '0');
       return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
     }
@@ -1076,7 +1105,8 @@
 
       container.innerHTML = goals.map(g => {
         const filtered = records.filter(r => {
-          const rDate = new Date(r.startTime);
+          let rDate = new Date(r.startTime);
+          if (isNaN(rDate.getTime())) return false;
           if (g.frequency === 'day') return rDate.toDateString() === now.toDateString();
           if (g.frequency === 'week') return rDate >= new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
           if (g.frequency === 'month') return rDate.getMonth() === now.getMonth() && rDate.getFullYear() === now.getFullYear();
@@ -1142,6 +1172,7 @@
       const now = new Date();
       return records.filter(r => {
         const rDate = new Date(r.startTime);
+        if (isNaN(rDate.getTime())) return false;
         if (currentPeriod === 'day') return rDate.toDateString() === now.toDateString();
         if (currentPeriod === 'week') return rDate >= new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         if (currentPeriod === 'month') return rDate.getMonth() === now.getMonth() && rDate.getFullYear() === now.getFullYear();
