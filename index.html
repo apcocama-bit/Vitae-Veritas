@@ -19,11 +19,31 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen pb-24 font-sans antialiased selection:bg-orange-500/30">
 
-  <!-- Header -->
-  <header class="bg-slate-800/90 backdrop-blur-md border-b border-slate-700 p-4 text-center sticky top-0 z-10 shadow-md">
+  <!-- Header con Selector de Usuario -->
+  <header class="bg-slate-800/90 backdrop-blur-md border-b border-slate-700 p-4 sticky top-0 z-10 shadow-md flex justify-between items-center max-w-md mx-auto">
+    <div class="w-8"></div> <!-- Espaciador para centrar el título -->
     <h1 class="text-xl font-bold tracking-wide text-strava flex items-center justify-center gap-2">
       ⏱️ <span>Control de Tiempo</span>
     </h1>
+    
+    <!-- Botón de Selección de Usuario -->
+    <div class="relative">
+      <button onclick="toggleUserDropdown()" class="w-8 h-8 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-full flex items-center justify-center text-sm shadow-sm transition-transform active:scale-95" title="Cambiar usuario">
+        👤
+      </button>
+      
+      <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-36 bg-slate-800 border border-slate-700 rounded-xl shadow-xl z-30 py-1.5 space-y-1">
+        <div class="px-3 py-1 text-[10px] uppercase font-bold text-slate-400 border-b border-slate-700">Usuario Activo</div>
+        <button onclick="selectUser('Andrés')" class="w-full text-left px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 flex justify-between items-center">
+          <span>Andrés</span>
+          <span id="user-check-Andrés" class="text-strava text-xs">✓</span>
+        </button>
+        <button onclick="selectUser('Andrea')" class="w-full text-left px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 flex justify-between items-center">
+          <span>Andrea</span>
+          <span id="user-check-Andrea" class="text-strava text-xs hidden">✓</span>
+        </button>
+      </div>
+    </div>
   </header>
 
   <main class="max-w-md mx-auto p-4 space-y-6">
@@ -45,8 +65,9 @@
 
       <!-- Selector de Actividad -->
       <div id="selection-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-sm space-y-4">
-        <div>
+        <div class="flex justify-between items-center">
           <h3 class="text-base font-semibold text-slate-200">Nueva Actividad</h3>
+          <span id="current-user-badge" class="bg-strava/20 text-strava text-[10px] font-bold px-2 py-0.5 rounded-full border border-strava/30">Andrés</span>
         </div>
         
         <div>
@@ -72,12 +93,10 @@
         </button>
 
         <div class="pt-2 border-t border-slate-700/60 space-y-1.5">
-          <!-- Botón Añadir Actividad (Retroactivo) -->
           <button onclick="toggleManualEntry()" class="w-full text-base font-semibold text-slate-300 hover:text-strava py-2 flex items-center justify-center gap-1 transition-colors">
             <span>➕ Añadir actividad</span>
           </button>
           
-          <!-- Botón Editar Categorías / Actividades con Lápiz -->
           <button onclick="openCategoryModal()" class="w-full text-xs text-slate-400 hover:text-strava py-1.5 font-medium flex items-center justify-center gap-1.5 transition-colors">
             <span>✏️</span>
             <span>Editar Categorías / Actividades</span>
@@ -169,7 +188,46 @@
       </div>
     </section>
 
-    <!-- TAB 3: HISTÓRICO -->
+    <!-- TAB 3: TAREAS (NUEVA PESTAÑA) -->
+    <section id="tab-tasks" class="tab-content hidden space-y-5">
+      <div class="flex justify-between items-center">
+        <h3 class="text-lg font-bold text-slate-200">Lista de Tareas</h3>
+        <button onclick="toggleTaskForm()" class="bg-strava hover:bg-orange-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg">+ Nueva Tarea</button>
+      </div>
+
+      <!-- Formulario Nueva / Editar Tarea -->
+      <div id="task-form-card" class="hidden bg-slate-800 border border-slate-700 rounded-2xl p-4 space-y-3">
+        <h4 id="task-form-title" class="text-sm font-semibold text-slate-200">Crear Tarea</h4>
+        <input type="hidden" id="task-edit-id">
+        
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Título de la Tarea</label>
+          <input type="text" id="task-title-input" placeholder="Ej: Comprar material de papelería..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-100">
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Descripción / Detalles</label>
+          <textarea id="task-desc-input" rows="3" placeholder="Detalles de la tarea..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-100"></textarea>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="task-urgent-input" class="w-4 h-4 accent-red-500 rounded cursor-pointer">
+          <label for="task-urgent-input" class="text-xs font-semibold text-red-400 cursor-pointer">🔥 Marcar como URGENTE</label>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button onclick="saveTask()" class="flex-1 bg-strava text-white text-xs font-bold py-2 rounded-xl">Guardar Tarea</button>
+          <button onclick="toggleTaskForm()" class="bg-slate-700 text-slate-300 text-xs py-2 px-3 rounded-xl">Cancelar</button>
+        </div>
+      </div>
+
+      <!-- Lista de Tareas -->
+      <div id="tasks-list" class="space-y-3">
+        <p class="text-slate-500 text-center py-8 text-sm">No tienes tareas pendientes.</p>
+      </div>
+    </section>
+
+    <!-- TAB 4: HISTÓRICO -->
     <section id="tab-history" class="tab-content hidden space-y-4">
       <div class="flex justify-between items-center">
         <h3 class="text-lg font-bold text-slate-200">Historial</h3>
@@ -183,7 +241,7 @@
       </div>
     </section>
 
-    <!-- TAB 4: ESTADÍSTICAS -->
+    <!-- TAB 5: ESTADÍSTICAS -->
     <section id="tab-stats" class="tab-content hidden space-y-5">
       <h3 class="text-lg font-bold text-slate-200">Resumen & Gráficas</h3>
       
@@ -260,7 +318,6 @@
       <div class="space-y-2 bg-slate-900/60 p-3 rounded-xl border border-slate-700/50">
         <h4 class="text-xs font-bold text-red-400 uppercase tracking-wider">🗑️ Eliminar Elementos</h4>
         <div id="manage-delete-list" class="space-y-2 max-h-48 overflow-y-auto pr-1">
-          <!-- Se rellena dinámicamente -->
         </div>
       </div>
 
@@ -318,21 +375,25 @@
     </div>
   </div>
 
-  <!-- Navegación Inferior (4 Pestañas) -->
+  <!-- Navegación Inferior (5 Pestañas) -->
   <nav class="fixed bottom-0 left-0 right-0 bg-slate-800/95 backdrop-blur-md border-t border-slate-700 flex justify-around p-2 z-20">
-    <button onclick="switchTab('timer')" id="nav-timer" class="flex flex-col items-center py-1 px-3 text-strava font-semibold text-[10px]">
+    <button onclick="switchTab('timer')" id="nav-timer" class="flex flex-col items-center py-1 px-2 text-strava font-semibold text-[10px]">
       <span class="text-lg">⏱️</span>
       <span>Fichar</span>
     </button>
-    <button onclick="switchTab('goals')" id="nav-goals" class="flex flex-col items-center py-1 px-3 text-slate-400 font-semibold text-[10px]">
+    <button onclick="switchTab('goals')" id="nav-goals" class="flex flex-col items-center py-1 px-2 text-slate-400 font-semibold text-[10px]">
       <span class="text-lg">🎯</span>
       <span>Objetivos</span>
     </button>
-    <button onclick="switchTab('history')" id="nav-history" class="flex flex-col items-center py-1 px-3 text-slate-400 font-semibold text-[10px]">
+    <button onclick="switchTab('tasks')" id="nav-tasks" class="flex flex-col items-center py-1 px-2 text-slate-400 font-semibold text-[10px]">
       <span class="text-lg">📋</span>
+      <span>Tareas</span>
+    </button>
+    <button onclick="switchTab('history')" id="nav-history" class="flex flex-col items-center py-1 px-2 text-slate-400 font-semibold text-[10px]">
+      <span class="text-lg">📜</span>
       <span>Histórico</span>
     </button>
-    <button onclick="switchTab('stats')" id="nav-stats" class="flex flex-col items-center py-1 px-3 text-slate-400 font-semibold text-[10px]">
+    <button onclick="switchTab('stats')" id="nav-stats" class="flex flex-col items-center py-1 px-2 text-slate-400 font-semibold text-[10px]">
       <span class="text-lg">📊</span>
       <span>Gráficas</span>
     </button>
@@ -351,30 +412,70 @@
       "Otros":   { color: "#ef4444", items: ["Jugar", "Youtube", "Tocar música", "Vibecoding", "TV y Cine"] }
     };
 
-    let CATEGORIES = JSON.parse(localStorage.getItem('tt_categories')) || DEFAULT_CATEGORIES;
+    // GESTIÓN DE USUARIOS Y DATOS SEPARADOS
+    let currentUser = localStorage.getItem('tt_current_user') || 'Andrés';
 
-    let activeTimer = JSON.parse(localStorage.getItem('tt_active')) || null;
-    let records = JSON.parse(localStorage.getItem('tt_records')) || [];
-    let goals = JSON.parse(localStorage.getItem('tt_goals')) || [];
+    let CATEGORIES = {};
+    let activeTimer = null;
+    let records = [];
+    let goals = [];
+    let tasks = [];
+
     let timerInterval = null;
     let chartInstance = null;
-
     let currentPeriod = 'week'; 
     let currentGroupBy = 'category'; 
     let selectedCategoryDrilldown = null;
 
     document.addEventListener('DOMContentLoaded', () => {
-      populateActivitySelects();
-      autoAssignCategory();
-      renderUI();
-      if (activeTimer) startTimerInterval();
+      loadUserData();
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
       }
     });
 
+    function getKey(baseKey) {
+      return `${baseKey}_${currentUser.toLowerCase()}`;
+    }
+
+    function loadUserData() {
+      CATEGORIES = JSON.parse(localStorage.getItem(getKey('tt_categories'))) || DEFAULT_CATEGORIES;
+      activeTimer = JSON.parse(localStorage.getItem(getKey('tt_active'))) || null;
+      records = JSON.parse(localStorage.getItem(getKey('tt_records'))) || [];
+      goals = JSON.parse(localStorage.getItem(getKey('tt_goals'))) || [];
+      tasks = JSON.parse(localStorage.getItem(getKey('tt_tasks'))) || [];
+
+      document.getElementById('current-user-badge').innerText = currentUser;
+      
+      // Actualizar marcas en el selector de usuario
+      document.getElementById('user-check-Andrés').classList.toggle('hidden', currentUser !== 'Andrés');
+      document.getElementById('user-check-Andrea').classList.toggle('hidden', currentUser !== 'Andrea');
+
+      populateActivitySelects();
+      autoAssignCategory();
+      renderUI();
+
+      if (activeTimer) startTimerInterval();
+      else if (timerInterval) clearInterval(timerInterval);
+    }
+
+    function toggleUserDropdown() {
+      document.getElementById('user-dropdown').classList.toggle('hidden');
+    }
+
+    function selectUser(user) {
+      if (currentUser === user) {
+        toggleUserDropdown();
+        return;
+      }
+      currentUser = user;
+      localStorage.setItem('tt_current_user', currentUser);
+      toggleUserDropdown();
+      loadUserData();
+    }
+
     function saveCategories() {
-      localStorage.setItem('tt_categories', JSON.stringify(CATEGORIES));
+      localStorage.setItem(getKey('tt_categories'), JSON.stringify(CATEGORIES));
     }
 
     function populateActivitySelects() {
@@ -404,7 +505,7 @@
       }
     }
 
-    /* MODAL GESTIÓN */
+    /* MODAL GESTIÓN DE CATEGORÍAS */
     function openCategoryModal() {
       renderManageDeleteList();
       const catSelect = document.getElementById('add-activity-category-select');
@@ -449,25 +550,16 @@
     function addNewCategory() {
       const nameInput = document.getElementById('new-category-name');
       const colorInput = document.getElementById('new-category-color');
-
       const name = nameInput.value.trim();
       const color = colorInput.value;
 
-      if (!name) {
-        alert('Escribe el nombre de la categoría.');
-        return;
-      }
-
-      if (CATEGORIES[name]) {
-        alert('Esa categoría ya existe.');
-        return;
-      }
+      if (!name) return alert('Escribe el nombre de la categoría.');
+      if (CATEGORIES[name]) return alert('Esa categoría ya existe.');
 
       CATEGORIES[name] = { color: color, items: [] };
       saveCategories();
       populateActivitySelects();
       renderManageDeleteList();
-
       nameInput.value = '';
       autoAssignCategory();
     }
@@ -485,30 +577,17 @@
     function addNewActivity() {
       const catSelect = document.getElementById('add-activity-category-select');
       const actInput = document.getElementById('new-activity-name');
-
       const category = catSelect.value;
       const activity = actInput.value.trim();
 
-      if (!activity) {
-        alert('Escribe el nombre de la actividad.');
-        return;
-      }
-
-      if (!CATEGORIES[category]) {
-        alert('La categoría seleccionada no existe.');
-        return;
-      }
-
-      if (CATEGORIES[category].items.includes(activity)) {
-        alert('Esa actividad ya existe en esta categoría.');
-        return;
-      }
+      if (!activity) return alert('Escribe el nombre de la actividad.');
+      if (!CATEGORIES[category]) return alert('La categoría seleccionada no existe.');
+      if (CATEGORIES[category].items.includes(activity)) return alert('Esa actividad ya existe.');
 
       CATEGORIES[category].items.push(activity);
       saveCategories();
       populateActivitySelects();
       renderManageDeleteList();
-
       actInput.value = '';
     }
 
@@ -522,23 +601,11 @@
     }
 
     function getActivityColor(key) {
-      if (CATEGORIES[key]) {
-        return CATEGORIES[key].color;
-      }
+      if (CATEGORIES[key]) return CATEGORIES[key].color;
       for (const cat in CATEGORIES) {
-        if (CATEGORIES[cat].items.includes(key)) {
-          return CATEGORIES[cat].color;
-        }
+        if (CATEGORIES[cat].items.includes(key)) return CATEGORIES[cat].color;
       }
       return '#f97316';
-    }
-
-    function onStartDateTimeChange(type) {
-      const startVal = document.getElementById(`${type}-start`).value;
-      const endInput = document.getElementById(`${type}-end`);
-      if (startVal && endInput) {
-        endInput.value = startVal;
-      }
     }
 
     function autoAssignCategory() {
@@ -552,15 +619,12 @@
 
     function startTimer() {
       const val = document.getElementById('activity-select').value;
-      if (!val) {
-        alert('Selecciona una actividad para fichar.');
-        return;
-      }
+      if (!val) return alert('Selecciona una actividad para fichar.');
       const [category, activity] = val.split('|');
       const notes = document.getElementById('notes-input').value.trim();
 
       activeTimer = { category, activity, notes, startTime: Date.now() };
-      localStorage.setItem('tt_active', JSON.stringify(activeTimer));
+      localStorage.setItem(getKey('tt_active'), JSON.stringify(activeTimer));
       document.getElementById('notes-input').value = '';
       startTimerInterval();
       renderUI();
@@ -591,12 +655,12 @@
           durationSec: durationSec
         };
         records.unshift(newRecord);
-        localStorage.setItem('tt_records', JSON.stringify(records));
+        localStorage.setItem(getKey('tt_records'), JSON.stringify(records));
         sendToGoogleSheets(newRecord, 'create');
       }
 
       activeTimer = null;
-      localStorage.removeItem('tt_active');
+      localStorage.removeItem(getKey('tt_active'));
       renderUI();
     }
 
@@ -612,32 +676,17 @@
       const endVal = document.getElementById('manual-end').value;
       const notes = document.getElementById('manual-notes').value.trim();
 
-      if (!startVal || !endVal) {
-        alert('Por favor selecciona hora de inicio y fin.');
-        return;
-      }
+      if (!startVal || !endVal) return alert('Por favor selecciona hora de inicio y fin.');
 
       const startTime = new Date(startVal).getTime();
       const endTime = new Date(endVal).getTime();
       const durationSec = Math.floor((endTime - startTime) / 1000);
 
-      if (durationSec <= 0) {
-        alert('La hora de fin debe ser posterior a la de inicio.');
-        return;
-      }
+      if (durationSec <= 0) return alert('La hora de fin debe ser posterior a la de inicio.');
 
-      const newRecord = {
-        id: Date.now(),
-        category,
-        activity,
-        notes,
-        startTime,
-        endTime,
-        durationSec
-      };
-
+      const newRecord = { id: Date.now(), category, activity, notes, startTime, endTime, durationSec };
       records.unshift(newRecord);
-      localStorage.setItem('tt_records', JSON.stringify(records));
+      localStorage.setItem(getKey('tt_records'), JSON.stringify(records));
       sendToGoogleSheets(newRecord, 'create');
 
       document.getElementById('manual-start').value = '';
@@ -653,6 +702,7 @@
       const endDate = new Date(record.endTime);
       
       const payload = {
+        usuario: currentUser,
         action: action,
         id: record.id,
         fecha: startDate.toLocaleDateString('es-ES'),
@@ -682,7 +732,7 @@
       if (btn) btn.innerText = '⏳ Cargando...';
 
       try {
-        const res = await fetch(SHEETS_WEBHOOK_URL);
+        const res = await fetch(`${SHEETS_WEBHOOK_URL}?usuario=${encodeURIComponent(currentUser)}`);
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
           let added = 0;
@@ -697,19 +747,141 @@
             }
           });
           records.sort((a, b) => b.startTime - a.startTime);
-          localStorage.setItem('tt_records', JSON.stringify(records));
+          localStorage.setItem(getKey('tt_records'), JSON.stringify(records));
           renderUI();
-          alert(`Sincronización completada. ${added} registros recuperados/actualizados.`);
+          alert(`Sincronización completada (${currentUser}). ${added} registros procesados.`);
         } else {
-          alert('No se encontraron registros en la nube.');
+          alert(`No se encontraron registros para ${currentUser} en la nube.`);
         }
       } catch (err) {
-        alert('Error al conectar con la nube. Revisa haber publicado la nueva versión en Google Apps Script.');
+        alert('Error al conectar con la nube.');
       } finally {
         if (btn) btn.innerText = '🔄 Cargar de la nube';
       }
     }
 
+    /* GESTIÓN DE TAREAS */
+    function toggleTaskForm() {
+      const card = document.getElementById('task-form-card');
+      card.classList.toggle('hidden');
+      if (card.classList.contains('hidden')) {
+        document.getElementById('task-edit-id').value = '';
+        document.getElementById('task-title-input').value = '';
+        document.getElementById('task-desc-input').value = '';
+        document.getElementById('task-urgent-input').checked = false;
+        document.getElementById('task-form-title').innerText = 'Crear Tarea';
+      }
+    }
+
+    function saveTask() {
+      const editId = document.getElementById('task-edit-id').value;
+      const title = document.getElementById('task-title-input').value.trim();
+      const description = document.getElementById('task-desc-input').value.trim();
+      const isUrgent = document.getElementById('task-urgent-input').checked;
+
+      if (!title) return alert('Escribe el título de la tarea.');
+
+      if (editId) {
+        const task = tasks.find(t => t.id === parseInt(editId));
+        if (task) {
+          task.title = title;
+          task.description = description;
+          task.isUrgent = isUrgent;
+        }
+      } else {
+        tasks.unshift({
+          id: Date.now(),
+          title,
+          description,
+          isUrgent,
+          completed: false,
+          createdAt: Date.now()
+        });
+      }
+
+      localStorage.setItem(getKey('tt_tasks'), JSON.stringify(tasks));
+      toggleTaskForm();
+      renderTasks();
+    }
+
+    function toggleTaskDetails(id) {
+      const detailsEl = document.getElementById(`task-details-${id}`);
+      if (detailsEl) detailsEl.classList.toggle('hidden');
+    }
+
+    function openEditTask(id) {
+      const task = tasks.find(t => t.id === id);
+      if (!task) return;
+      document.getElementById('task-edit-id').value = task.id;
+      document.getElementById('task-title-input').value = task.title;
+      document.getElementById('task-desc-input').value = task.description;
+      document.getElementById('task-urgent-input').checked = task.isUrgent;
+      document.getElementById('task-form-title').innerText = 'Editar Tarea';
+      document.getElementById('task-form-card').classList.remove('hidden');
+    }
+
+    function toggleTaskComplete(id) {
+      const task = tasks.find(t => t.id === id);
+      if (task) {
+        task.completed = !task.completed;
+        localStorage.setItem(getKey('tt_tasks'), JSON.stringify(tasks));
+        renderTasks();
+      }
+    }
+
+    function deleteTask(id) {
+      if (confirm('¿Borrar esta tarea?')) {
+        tasks = tasks.filter(t => t.id !== id);
+        localStorage.setItem(getKey('tt_tasks'), JSON.stringify(tasks));
+        renderTasks();
+      }
+    }
+
+    function renderTasks() {
+      const container = document.getElementById('tasks-list');
+      if (tasks.length === 0) {
+        container.innerHTML = '<p class="text-slate-500 text-center py-8 text-sm">No tienes tareas pendientes.</p>';
+        return;
+      }
+
+      // Ordenar: No completadas primero (urgentes arriba), luego completadas
+      const sortedTasks = [...tasks].sort((a, b) => {
+        if (a.completed !== b.completed) return a.completed ? 1 : -1;
+        if (a.isUrgent !== b.isUrgent) return a.isUrgent ? -1 : 1;
+        return b.createdAt - a.createdAt;
+      });
+
+      container.innerHTML = sortedTasks.map(t => `
+        <div class="bg-slate-800 border ${t.completed ? 'border-slate-800 opacity-60' : t.isUrgent ? 'border-red-500/80 bg-red-950/10' : 'border-slate-700'} rounded-xl p-3 space-y-2">
+          <!-- Fila principal (Título y Botones) -->
+          <div class="flex items-center justify-between cursor-pointer" onclick="toggleTaskDetails(${t.id})">
+            <div class="flex items-center gap-2 flex-1 pr-2">
+              <button onclick="event.stopPropagation(); toggleTaskComplete(${t.id})" class="w-5 h-5 rounded border flex items-center justify-center text-xs font-bold transition-all ${t.completed ? 'bg-emerald-600 border-emerald-500 text-white' : 'border-slate-500 text-transparent hover:border-strava'}">
+                ✓
+              </button>
+              <span class="text-sm font-semibold text-slate-100 ${t.completed ? 'line-through text-slate-400' : ''}">${t.title}</span>
+              ${t.isUrgent && !t.completed ? '<span class="bg-red-500/20 text-red-400 border border-red-500/40 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase">Urgente</span>' : ''}
+            </div>
+            
+            <div class="flex items-center gap-1.5">
+              <button onclick="event.stopPropagation(); openEditTask(${t.id})" class="w-6 h-6 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg flex items-center justify-center text-xs shadow-sm">
+                ✏️
+              </button>
+              <button onclick="event.stopPropagation(); deleteTask(${t.id})" class="w-6 h-6 bg-red-950/60 border border-red-800/80 text-red-300 rounded-lg flex items-center justify-center text-xs">
+                🗑️
+              </button>
+            </div>
+          </div>
+
+          <!-- Detalles Plegables -->
+          <div id="task-details-${t.id}" class="hidden pt-2 border-t border-slate-700/60 text-xs text-slate-300 space-y-1">
+            <p class="whitespace-pre-line">${t.description || '<em>Sin descripción adicional.</em>'}</p>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    /* RENDER Y OTRAS SECCIONES */
     function renderUI() {
       const activeCard = document.getElementById('active-card');
       const selectionCard = document.getElementById('selection-card');
@@ -734,6 +906,7 @@
 
       renderHistory();
       renderGoals();
+      renderTasks();
       renderStats();
     }
 
@@ -757,14 +930,8 @@
               </div>
               <div class="flex items-center space-x-2">
                 <span class="text-xs font-mono font-bold text-strava mr-1">${formatSeconds(r.durationSec)}</span>
-                
-                <button onclick="openEditModal(${r.id})" class="w-7 h-7 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg flex items-center justify-center text-xs shadow-sm active:scale-90 transition-transform">
-                  ✏️
-                </button>
-                
-                <button onclick="openDeleteModal(${r.id})" class="w-7 h-7 bg-red-950/60 border border-red-800/80 hover:bg-red-900 text-red-300 rounded-lg flex items-center justify-center text-xs shadow-sm active:scale-90 transition-transform">
-                  🗑️
-                </button>
+                <button onclick="openEditModal(${r.id})" class="w-7 h-7 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg flex items-center justify-center text-xs shadow-sm">✏️</button>
+                <button onclick="openDeleteModal(${r.id})" class="w-7 h-7 bg-red-950/60 border border-red-800/80 hover:bg-red-900 text-red-300 rounded-lg flex items-center justify-center text-xs shadow-sm">🗑️</button>
               </div>
             </div>
             ${r.notes ? `<div class="text-xs text-slate-300 italic bg-slate-900/40 p-1.5 rounded">📝 ${r.notes}</div>` : ''}
@@ -803,19 +970,13 @@
       const endVal = document.getElementById('edit-end').value;
       const notes = document.getElementById('edit-notes').value.trim();
 
-      if (!startVal || !endVal) {
-        alert('Por favor selecciona hora de inicio y fin.');
-        return;
-      }
+      if (!startVal || !endVal) return alert('Por favor selecciona hora de inicio y fin.');
 
       const startTime = new Date(startVal).getTime();
       const endTime = new Date(endVal).getTime();
       const durationSec = Math.floor((endTime - startTime) / 1000);
 
-      if (durationSec <= 0) {
-        alert('La hora de fin debe ser posterior a la de inicio.');
-        return;
-      }
+      if (durationSec <= 0) return alert('La hora de fin debe ser posterior a la de inicio.');
 
       const record = records.find(r => r.id === id);
       if (record) {
@@ -825,7 +986,7 @@
         record.endTime = endTime;
         record.durationSec = durationSec;
         record.notes = notes;
-        localStorage.setItem('tt_records', JSON.stringify(records));
+        localStorage.setItem(getKey('tt_records'), JSON.stringify(records));
         sendToGoogleSheets(record, 'update');
         renderUI();
       }
@@ -844,20 +1005,18 @@
     function confirmDeleteRecord() {
       const id = parseInt(document.getElementById('delete-id').value);
       const recordToDelete = records.find(r => r.id === id);
-      if (recordToDelete) {
-        sendToGoogleSheets(recordToDelete, 'delete');
-      }
+      if (recordToDelete) sendToGoogleSheets(recordToDelete, 'delete');
       records = records.filter(r => r.id !== id);
-      localStorage.setItem('tt_records', JSON.stringify(records));
+      localStorage.setItem(getKey('tt_records'), JSON.stringify(records));
       closeDeleteModal();
       renderUI();
     }
 
     function clearHistory() {
-      if (confirm('¿Seguro que quieres borrar todos los registros?')) {
+      if (confirm(`¿Seguro que quieres borrar todos los registros de ${currentUser}?`)) {
         records.forEach(r => sendToGoogleSheets(r, 'delete'));
         records = [];
-        localStorage.setItem('tt_records', JSON.stringify(records));
+        localStorage.setItem(getKey('tt_records'), JSON.stringify(records));
         renderUI();
       }
     }
@@ -875,9 +1034,7 @@
       let html = '';
 
       if (type === 'category') {
-        Object.keys(CATEGORIES).forEach(c => {
-          html += `<option value="${c}">${c}</option>`;
-        });
+        Object.keys(CATEGORIES).forEach(c => html += `<option value="${c}">${c}</option>`);
       } else {
         Object.keys(CATEGORIES).forEach(cat => {
           CATEGORIES[cat].items.forEach(act => {
@@ -894,27 +1051,17 @@
       const frequency = document.getElementById('goal-frequency').value;
       const targetHours = parseFloat(document.getElementById('goal-target-hours').value);
 
-      if (!targetHours || targetHours <= 0) {
-        alert('Ingresa una meta de horas válida.');
-        return;
-      }
+      if (!targetHours || targetHours <= 0) return alert('Ingresa una meta de horas válida.');
 
-      goals.push({
-        id: Date.now(),
-        targetType,
-        targetValue,
-        frequency,
-        targetHours
-      });
-
-      localStorage.setItem('tt_goals', JSON.stringify(goals));
+      goals.push({ id: Date.now(), targetType, targetValue, frequency, targetHours });
+      localStorage.setItem(getKey('tt_goals'), JSON.stringify(goals));
       toggleGoalForm();
       renderGoals();
     }
 
     function deleteGoal(id) {
       goals = goals.filter(g => g.id !== id);
-      localStorage.setItem('tt_goals', JSON.stringify(goals));
+      localStorage.setItem(getKey('tt_goals'), JSON.stringify(goals));
       renderGoals();
     }
 
@@ -930,13 +1077,9 @@
       container.innerHTML = goals.map(g => {
         const filtered = records.filter(r => {
           const rDate = new Date(r.startTime);
-          if (g.frequency === 'day') {
-            return rDate.toDateString() === now.toDateString();
-          } else if (g.frequency === 'week') {
-            return rDate >= new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          } else if (g.frequency === 'month') {
-            return rDate.getMonth() === now.getMonth() && rDate.getFullYear() === now.getFullYear();
-          }
+          if (g.frequency === 'day') return rDate.toDateString() === now.toDateString();
+          if (g.frequency === 'week') return rDate >= new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          if (g.frequency === 'month') return rDate.getMonth() === now.getMonth() && rDate.getFullYear() === now.getFullYear();
           return true;
         });
 
@@ -948,7 +1091,6 @@
         const currentHours = totalSec / 3600;
         const percent = Math.min(Math.round((currentHours / g.targetHours) * 100), 100);
         const isCompleted = percent >= 100;
-
         const freqText = { day: 'Diario', week: 'Semanal', month: 'Mensual' }[g.frequency];
 
         return `
@@ -1113,6 +1255,7 @@
 
       if (tab === 'stats') renderStats();
       if (tab === 'goals') renderGoals();
+      if (tab === 'tasks') renderTasks();
     }
   </script>
 </body>
