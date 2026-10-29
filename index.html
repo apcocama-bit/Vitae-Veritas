@@ -111,7 +111,7 @@
 
         <div class="pt-2 border-t border-slate-700/60">
           <button onclick="toggleManualEntry()" class="w-full text-xs text-slate-400 hover:text-strava py-2 font-medium flex items-center justify-center gap-1">
-            <span>➕ Añadir actividad </span>
+            <span>➕ ¿Olvidaste fichar? Añadir actividad pasada</span>
           </button>
         </div>
       </div>
@@ -129,7 +129,7 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs text-slate-400 mb-1">Inicio</label>
-            <input type="datetime-local" id="manual-start" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-100">
+            <input type="datetime-local" id="manual-start" onchange="onStartDateTimeChange('manual')" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-100">
           </div>
           <div>
             <label class="block text-xs text-slate-400 mb-1">Fin</label>
@@ -204,7 +204,10 @@
     <section id="tab-history" class="tab-content hidden space-y-4">
       <div class="flex justify-between items-center">
         <h3 class="text-lg font-bold text-slate-200">Historial</h3>
-        <button onclick="clearHistory()" class="text-xs text-red-400 hover:underline">Borrar todo</button>
+        <div class="flex items-center gap-3">
+          <button id="btn-sync-cloud" onclick="syncFromCloud()" class="text-xs text-strava hover:underline flex items-center gap-1 font-semibold">🔄 Cargar de la nube</button>
+          <button onclick="clearHistory()" class="text-xs text-red-400 hover:underline">Borrar todo</button>
+        </div>
       </div>
       <div id="history-list" class="space-y-2">
         <p class="text-slate-500 text-center py-8 text-sm">No hay registros aún.</p>
@@ -266,7 +269,7 @@
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="block text-xs text-slate-400 mb-1">Fecha/Hora Inicio</label>
-          <input type="datetime-local" id="edit-start" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-100">
+          <input type="datetime-local" id="edit-start" onchange="onStartDateTimeChange('edit')" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-100">
         </div>
         <div>
           <label class="block text-xs text-slate-400 mb-1">Fecha/Hora Fin</label>
@@ -353,6 +356,26 @@
         navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
       }
     });
+
+    function getActivityColor(key) {
+      if (CATEGORIES[key]) {
+        return CATEGORIES[key].color;
+      }
+      for (const cat in CATEGORIES) {
+        if (CATEGORIES[cat].items.includes(key)) {
+          return CATEGORIES[cat].color;
+        }
+      }
+      return '#f97316';
+    }
+
+    function onStartDateTimeChange(type) {
+      const startVal = document.getElementById(`${type}-start`).value;
+      const endInput = document.getElementById(`${type}-end`);
+      if (startVal && endInput) {
+        endInput.value = startVal;
+      }
+    }
 
     function autoAssignCategory() {
       const val = document.getElementById('activity-select').value;
@@ -498,6 +521,37 @@
       }
     }
 
+    async function syncFromCloud() {
+      if (!SHEETS_WEBHOOK_URL) return;
+      const btn = document.getElementById('btn-sync-cloud');
+      if (btn) btn.innerText = '⏳ Cargando...';
+
+      try {
+        const res = await fetch(SHEETS_WEBHOOK_URL);
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          const existingIds = new Set(records.map(r => r.id));
+          let added = 0;
+          data.forEach(item => {
+            if (!existingIds.has(item.id)) {
+              records.push(item);
+              added++;
+            }
+          });
+          records.sort((a, b) => b.startTime - a.startTime);
+          localStorage.setItem('tt_records', JSON.stringify(records));
+          renderUI();
+          alert(`Sincronización completada. ${added} registros recuperados.`);
+        } else {
+          alert('No se encontraron registros nuevos en la nube.');
+        }
+      } catch (err) {
+        alert('Para usar la carga desde la nube, asegúrate de actualizar el código en Google Apps Script con la función doGet.');
+      } finally {
+        if (btn) btn.innerText = '🔄 Cargar de la nube';
+      }
+    }
+
     function renderUI() {
       const activeCard = document.getElementById('active-card');
       const selectionCard = document.getElementById('selection-card');
@@ -546,12 +600,10 @@
               <div class="flex items-center space-x-2">
                 <span class="text-xs font-mono font-bold text-strava mr-1">${formatSeconds(r.durationSec)}</span>
                 
-                <!-- Botón Editar 28px -->
                 <button onclick="openEditModal(${r.id})" class="w-7 h-7 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg flex items-center justify-center text-xs shadow-sm active:scale-90 transition-transform">
                   ✏️
                 </button>
                 
-                <!-- Botón Borrar 28px -->
                 <button onclick="openDeleteModal(${r.id})" class="w-7 h-7 bg-red-950/60 border border-red-800/80 hover:bg-red-900 text-red-300 rounded-lg flex items-center justify-center text-xs shadow-sm active:scale-90 transition-transform">
                   🗑️
                 </button>
@@ -822,7 +874,7 @@
         totalsContainer.innerHTML = '<p class="col-span-2 text-center text-slate-500 text-sm py-4">Sin datos para este período.</p>';
       } else {
         totalsContainer.innerHTML = keys.map(k => {
-          const catColor = CATEGORIES[k]?.color || '#f97316';
+          const catColor = getActivityColor(k);
           return `
             <div onclick="toggleDrilldown('${k}')" class="bg-slate-800 border border-slate-700 hover:border-slate-500 rounded-xl p-3 cursor-pointer transition-all">
               <div class="flex items-center gap-1.5">
@@ -838,7 +890,7 @@
       const ctx = document.getElementById('statsChart').getContext('2d');
       if (chartInstance) chartInstance.destroy();
 
-      const bgColors = keys.map(k => CATEGORIES[k]?.color || '#f97316');
+      const bgColors = keys.map(k => getActivityColor(k));
 
       chartInstance = new Chart(ctx, {
         type: (currentGroupBy === 'category' && !selectedCategoryDrilldown) ? 'doughnut' : 'bar',
