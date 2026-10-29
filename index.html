@@ -726,6 +726,27 @@
       }
     }
 
+    // Función crucial para evitar que las fechas cambien de día por la zona horaria
+    function parseLocalDate(fechaStr, horaStr) {
+      if (!fechaStr) return Date.now();
+      var partsF = fechaStr.toString().split('/');
+      if (partsF.length !== 3) return Date.now();
+      var day = parseInt(partsF[0], 10);
+      var month = parseInt(partsF[1], 10) - 1;
+      var year = parseInt(partsF[2], 10);
+
+      var hours = 0, minutes = 0, seconds = 0;
+      if (horaStr) {
+        var partsH = horaStr.toString().split(':');
+        hours = parseInt(partsH[0], 10) || 0;
+        minutes = parseInt(partsH[1], 10) || 0;
+        seconds = parseInt(partsH[2], 10) || 0;
+      }
+
+      var d = new Date(year, month, day, hours, minutes, seconds);
+      return isNaN(d.getTime()) ? Date.now() : d.getTime();
+    }
+
     async function syncFromCloud() {
       if (!SHEETS_WEBHOOK_URL) return;
       const btn = document.getElementById('btn-sync-cloud');
@@ -737,30 +758,21 @@
         if (Array.isArray(data) && data.length > 0) {
           let added = 0;
           data.forEach(item => {
-            // Aseguramos que item.startTime sea numérico o tratamos de convertir la fecha de la hoja
-            let parsedStart = item.startTime;
-            if (!parsedStart && item.fecha && item.horaInicio) {
-              // Intento de reconstrucción si viene plano de la hoja de cálculo
-              let parts = item.fecha.split('/');
-              if (parts.length === 3) {
-                parsedStart = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T${item.horaInicio}`).getTime();
-              }
-            }
-            if (!parsedStart || isNaN(parsedStart)) {
-              parsedStart = Date.now(); // Fallback seguro para evitar Invalid Date
-            }
+            let startTime = parseLocalDate(item.fecha, item.horaInicio);
+            let durationSec = item.durationSec || 0;
+            let endTime = startTime + (durationSec * 1000);
 
             const cleanItem = {
-              id: item.id || Date.now() + Math.random(),
+              id: item.id || startTime,
               category: item.category || item.categoria || 'Trabajo',
               activity: item.activity || item.actividad || 'General',
               notes: item.notes || item.notas || '',
-              startTime: parsedStart,
-              endTime: parsedStart + (item.durationSec || 0) * 1000,
-              durationSec: item.durationSec || 0
+              startTime: startTime,
+              endTime: endTime,
+              durationSec: durationSec
             };
 
-            const idx = records.findIndex(r => r.id === cleanItem.id);
+            const idx = records.findIndex(r => r.id.toString() === cleanItem.id.toString());
             if (idx === -1) {
               records.push(cleanItem);
               added++;
@@ -938,7 +950,6 @@
       }
 
       list.innerHTML = records.map(r => {
-        // Validacion robusta para evitar Invalid Date si r.startTime no es un número válido
         let dateObj = new Date(r.startTime);
         let dateStr = "Fecha no disponible";
         if (!isNaN(dateObj.getTime())) {
@@ -977,7 +988,7 @@
     }
 
     function openEditModal(id) {
-      const record = records.find(r => r.id === id);
+      const record = records.find(r => r.id.toString() === id.toString());
       if (!record) return;
       document.getElementById('edit-id').value = id;
       document.getElementById('edit-activity').value = `${record.category}|${record.activity}`;
@@ -992,7 +1003,7 @@
     }
 
     function saveEditRecord() {
-      const id = parseInt(document.getElementById('edit-id').value);
+      const id = document.getElementById('edit-id').value;
       const val = document.getElementById('edit-activity').value;
       const [category, activity] = val.split('|');
       const startVal = document.getElementById('edit-start').value;
@@ -1007,7 +1018,7 @@
 
       if (durationSec <= 0) return alert('La hora de fin debe ser posterior a la de inicio.');
 
-      const record = records.find(r => r.id === id);
+      const record = records.find(r => r.id.toString() === id.toString());
       if (record) {
         record.category = category;
         record.activity = activity;
@@ -1032,10 +1043,10 @@
     }
 
     function confirmDeleteRecord() {
-      const id = parseInt(document.getElementById('delete-id').value);
-      const recordToDelete = records.find(r => r.id === id);
+      const id = document.getElementById('delete-id').value;
+      const recordToDelete = records.find(r => r.id.toString() === id.toString());
       if (recordToDelete) sendToGoogleSheets(recordToDelete, 'delete');
-      records = records.filter(r => r.id !== id);
+      records = records.filter(r => r.id.toString() !== id.toString());
       localStorage.setItem(getKey('tt_records'), JSON.stringify(records));
       closeDeleteModal();
       renderUI();
