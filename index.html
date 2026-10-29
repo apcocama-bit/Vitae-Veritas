@@ -21,7 +21,7 @@
 
   <!-- Header con Selector de Usuario -->
   <header class="bg-slate-800/90 backdrop-blur-md border-b border-slate-700 p-4 sticky top-0 z-10 shadow-md flex justify-between items-center max-w-md mx-auto">
-    <div class="w-8"></div> <!-- Espaciador para centrar el título -->
+    <div class="w-8"></div>
     <h1 class="text-xl font-bold tracking-wide text-strava flex items-center justify-center gap-2">
       ⏱️ <span>Control de Tiempo</span>
     </h1>
@@ -188,7 +188,7 @@
       </div>
     </section>
 
-    <!-- TAB 3: TAREAS (NUEVA PESTAÑA) -->
+    <!-- TAB 3: TAREAS -->
     <section id="tab-tasks" class="tab-content hidden space-y-5">
       <div class="flex justify-between items-center">
         <h3 class="text-lg font-bold text-slate-200">Lista de Tareas</h3>
@@ -412,7 +412,7 @@
       "Otros":   { color: "#ef4444", items: ["Jugar", "Youtube", "Tocar música", "Vibecoding", "TV y Cine"] }
     };
 
-    // GESTIÓN DE USUARIOS Y DATOS SEPARADOS
+    // GESTIÓN DE USUARIOS Y DATOS SEPARADOS AISLADOS
     let currentUser = localStorage.getItem('tt_current_user') || 'Andrés';
 
     let CATEGORIES = {};
@@ -439,7 +439,10 @@
     }
 
     function loadUserData() {
-      CATEGORIES = JSON.parse(localStorage.getItem(getKey('tt_categories'))) || DEFAULT_CATEGORIES;
+      // Usamos copias independientes para evitar cruces de referencias de objetos predeterminados
+      const savedCategories = localStorage.getItem(getKey('tt_categories'));
+      CATEGORIES = savedCategories ? JSON.parse(savedCategories) : JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+
       activeTimer = JSON.parse(localStorage.getItem(getKey('tt_active'))) || null;
       records = JSON.parse(localStorage.getItem(getKey('tt_records'))) || [];
       goals = JSON.parse(localStorage.getItem(getKey('tt_goals'))) || [];
@@ -490,7 +493,7 @@
       Object.keys(CATEGORIES).forEach(cat => {
         html += `<optgroup label="${index}. ${cat}">`;
         CATEGORIES[cat].items.forEach(act => {
-          html += `<option value="${cat}|${act}">${act}${cat === act ? '' : ' (' + cat + ')'}</option>`;
+          html += `<option value="${cat}|${act}">${act}${cat === cat ? '' : ''}</option>`;
         });
         html += `</optgroup>`;
         index++;
@@ -844,7 +847,6 @@
         return;
       }
 
-      // Ordenar: No completadas primero (urgentes arriba), luego completadas
       const sortedTasks = [...tasks].sort((a, b) => {
         if (a.completed !== b.completed) return a.completed ? 1 : -1;
         if (a.isUrgent !== b.isUrgent) return a.isUrgent ? -1 : 1;
@@ -853,7 +855,6 @@
 
       container.innerHTML = sortedTasks.map(t => `
         <div class="bg-slate-800 border ${t.completed ? 'border-slate-800 opacity-60' : t.isUrgent ? 'border-red-500/80 bg-red-950/10' : 'border-slate-700'} rounded-xl p-3 space-y-2">
-          <!-- Fila principal (Título y Botones) -->
           <div class="flex items-center justify-between cursor-pointer" onclick="toggleTaskDetails(${t.id})">
             <div class="flex items-center gap-2 flex-1 pr-2">
               <button onclick="event.stopPropagation(); toggleTaskComplete(${t.id})" class="w-5 h-5 rounded border flex items-center justify-center text-xs font-bold transition-all ${t.completed ? 'bg-emerald-600 border-emerald-500 text-white' : 'border-slate-500 text-transparent hover:border-strava'}">
@@ -873,7 +874,6 @@
             </div>
           </div>
 
-          <!-- Detalles Plegables -->
           <div id="task-details-${t.id}" class="hidden pt-2 border-t border-slate-700/60 text-xs text-slate-300 space-y-1">
             <p class="whitespace-pre-line">${t.description || '<em>Sin descripción adicional.</em>'}</p>
           </div>
