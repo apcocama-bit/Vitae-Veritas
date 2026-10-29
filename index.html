@@ -111,7 +111,7 @@
 
         <div class="pt-2 border-t border-slate-700/60">
           <button onclick="toggleManualEntry()" class="w-full text-xs text-slate-400 hover:text-strava py-2 font-medium flex items-center justify-center gap-1">
-            <span>➕ Añadir actividad </span>
+            <span>➕ ¿Olvidaste fichar? Añadir actividad pasada</span>
           </button>
         </div>
       </div>
@@ -123,7 +123,6 @@
         <div>
           <label class="block text-xs text-slate-400 mb-1">Actividad</label>
           <select id="manual-activity-select" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-100">
-            <!-- Rellenado por JS -->
           </select>
         </div>
 
@@ -154,7 +153,7 @@
     <section id="tab-goals" class="tab-content hidden space-y-5">
       <div class="flex justify-between items-center">
         <h3 class="text-lg font-bold text-slate-200">Tus Objetivos</h3>
-        <button onclick="toggleGoalForm()" class="bg-strava hover:bg-orange-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg">+ Nuevo Meta</button>
+        <button onclick="toggleGoalForm()" class="bg-strava hover:bg-orange-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg">+ Nueva Meta</button>
       </div>
 
       <!-- Formulario Nuevo Objetivo -->
@@ -262,6 +261,17 @@
         <label class="block text-xs text-slate-400 mb-1">Actividad</label>
         <select id="edit-activity" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-100">
         </select>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Fecha/Hora Inicio</label>
+          <input type="datetime-local" id="edit-start" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-100">
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Fecha/Hora Fin</label>
+          <input type="datetime-local" id="edit-end" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-100">
+        </div>
       </div>
 
       <div>
@@ -405,7 +415,7 @@
         };
         records.unshift(newRecord);
         localStorage.setItem('tt_records', JSON.stringify(records));
-        sendToGoogleSheets(newRecord);
+        sendToGoogleSheets(newRecord, 'create');
       }
 
       activeTimer = null;
@@ -450,7 +460,7 @@
 
       records.unshift(newRecord);
       localStorage.setItem('tt_records', JSON.stringify(records));
-      sendToGoogleSheets(newRecord);
+      sendToGoogleSheets(newRecord, 'create');
 
       document.getElementById('manual-start').value = '';
       document.getElementById('manual-end').value = '';
@@ -459,12 +469,14 @@
       renderUI();
     }
 
-    async function sendToGoogleSheets(record) {
+    async function sendToGoogleSheets(record, action = 'create') {
       if (!SHEETS_WEBHOOK_URL) return;
       const startDate = new Date(record.startTime);
       const endDate = new Date(record.endTime);
       
       const payload = {
+        action: action,
+        id: record.id,
         fecha: startDate.toLocaleDateString('es-ES'),
         horaInicio: startDate.toLocaleTimeString('es-ES'),
         horaFin: endDate.toLocaleTimeString('es-ES'),
@@ -552,11 +564,19 @@
       }).join('');
     }
 
+    function formatForDatetimeLocal(timestamp) {
+      const d = new Date(timestamp);
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
     function openEditModal(id) {
       const record = records.find(r => r.id === id);
       if (!record) return;
       document.getElementById('edit-id').value = id;
       document.getElementById('edit-activity').value = `${record.category}|${record.activity}`;
+      document.getElementById('edit-start').value = formatForDatetimeLocal(record.startTime);
+      document.getElementById('edit-end').value = formatForDatetimeLocal(record.endTime);
       document.getElementById('edit-notes').value = record.notes || '';
       document.getElementById('edit-modal').classList.remove('hidden');
     }
@@ -569,14 +589,34 @@
       const id = parseInt(document.getElementById('edit-id').value);
       const val = document.getElementById('edit-activity').value;
       const [category, activity] = val.split('|');
+      const startVal = document.getElementById('edit-start').value;
+      const endVal = document.getElementById('edit-end').value;
       const notes = document.getElementById('edit-notes').value.trim();
+
+      if (!startVal || !endVal) {
+        alert('Por favor selecciona hora de inicio y fin.');
+        return;
+      }
+
+      const startTime = new Date(startVal).getTime();
+      const endTime = new Date(endVal).getTime();
+      const durationSec = Math.floor((endTime - startTime) / 1000);
+
+      if (durationSec <= 0) {
+        alert('La hora de fin debe ser posterior a la de inicio.');
+        return;
+      }
 
       const record = records.find(r => r.id === id);
       if (record) {
         record.category = category;
         record.activity = activity;
+        record.startTime = startTime;
+        record.endTime = endTime;
+        record.durationSec = durationSec;
         record.notes = notes;
         localStorage.setItem('tt_records', JSON.stringify(records));
+        sendToGoogleSheets(record, 'update');
         renderUI();
       }
       closeEditModal();
@@ -593,6 +633,10 @@
 
     function confirmDeleteRecord() {
       const id = parseInt(document.getElementById('delete-id').value);
+      const recordToDelete = records.find(r => r.id === id);
+      if (recordToDelete) {
+        sendToGoogleSheets(recordToDelete, 'delete');
+      }
       records = records.filter(r => r.id !== id);
       localStorage.setItem('tt_records', JSON.stringify(records));
       closeDeleteModal();
@@ -601,6 +645,7 @@
 
     function clearHistory() {
       if (confirm('¿Seguro que quieres borrar todos los registros?')) {
+        records.forEach(r => sendToGoogleSheets(r, 'delete'));
         records = [];
         localStorage.setItem('tt_records', JSON.stringify(records));
         renderUI();
@@ -673,7 +718,6 @@
       const now = new Date();
 
       container.innerHTML = goals.map(g => {
-        // Filtrar registros según frecuencia
         const filtered = records.filter(r => {
           const rDate = new Date(r.startTime);
           if (g.frequency === 'day') {
@@ -686,7 +730,6 @@
           return true;
         });
 
-        // Sumar tiempo
         const totalSec = filtered.reduce((acc, r) => {
           const match = (g.targetType === 'category') ? (r.category === g.targetValue) : (r.activity === g.targetValue);
           return match ? acc + r.durationSec : acc;
@@ -760,7 +803,6 @@
       const totals = {};
 
       if (selectedCategoryDrilldown) {
-        // Modo Drill-down por categoría seleccionada
         filtered.filter(r => r.category === selectedCategoryDrilldown).forEach(r => {
           totals[r.activity] = (totals[r.activity] || 0) + r.durationSec;
         });
@@ -793,7 +835,6 @@
         }).join('');
       }
 
-      // Chart.js
       const ctx = document.getElementById('statsChart').getContext('2d');
       if (chartInstance) chartInstance.destroy();
 
@@ -814,7 +855,7 @@
           maintainAspectRatio: false,
           onClick: (e, elements) => {
             if (elements.length > 0 && currentGroupBy === 'category') {
-              const index = elements[0].index;
+              const index = elements.index;
               toggleDrilldown(keys[index]);
             }
           },
