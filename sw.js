@@ -1,11 +1,10 @@
-const CACHE_NAME = 'time-tracker-v2';
+const CACHE_NAME = 'time-tracker-v3';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json'
 ];
 
-// Instalación inmediata
 self.addEventListener('install', (e) => {
   self.skipWaiting();
   e.waitUntil(
@@ -13,7 +12,6 @@ self.addEventListener('install', (e) => {
   );
 });
 
-// Limpieza de cachés antiguas
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) => {
@@ -28,7 +26,6 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// Estrategia Network-First: Descarga la última versión de la web si hay internet
 self.addEventListener('fetch', (e) => {
   e.respondWith(
     fetch(e.request)
