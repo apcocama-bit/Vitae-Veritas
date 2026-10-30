@@ -261,22 +261,23 @@
 
   </main>
 
-  <!-- MODAL CAMBIO DE USUARIO -->
+  <!-- MODAL CAMBIO DE USUARIO (DINÁMICO CON BOTÓN DE CREAR USUARIO) -->
   <div id="user-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 w-full max-w-sm text-center space-y-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 w-full max-w-sm text-center space-y-4 max-h-[85vh] flex flex-col">
       <h3 class="text-base font-bold text-slate-200">Seleccionar Usuario</h3>
       <p class="text-xs text-slate-400">Cada usuario gestiona de forma independiente sus registros, categorías y tareas.</p>
       
-      <div class="space-y-2 pt-1">
-        <button onclick="switchUser('andres')" id="opt-user-andres" class="w-full p-3 rounded-xl border flex items-center justify-between font-bold text-sm transition-all">
-          <span class="flex items-center gap-2"><span>👤</span> Andres</span>
-          <span id="check-user-andres" class="text-strava font-bold hidden">✓ Activo</span>
-        </button>
-        
-        <button onclick="switchUser('andrea')" id="opt-user-andrea" class="w-full p-3 rounded-xl border flex items-center justify-between font-bold text-sm transition-all">
-          <span class="flex items-center gap-2"><span>👩</span> Andrea</span>
-          <span id="check-user-andrea" class="text-strava font-bold hidden">✓ Activo</span>
-        </button>
+      <div id="user-list-container" class="space-y-2 pt-1 overflow-y-auto flex-1 pr-1">
+        <!-- Generado dinámicamente -->
+      </div>
+
+      <!-- Formulario para añadir nuevo usuario -->
+      <div class="border-t border-slate-700 pt-3 space-y-2">
+        <h4 class="text-xs font-bold text-slate-300 text-left">+ Añadir Nuevo Usuario</h4>
+        <div class="flex gap-2">
+          <input type="text" id="new-user-name" placeholder="Nombre (ej: Carlos)" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-white">
+          <button onclick="createNewUser()" class="bg-strava text-white text-xs font-bold px-3 py-2 rounded-xl">Crear</button>
+        </div>
       </div>
 
       <button onclick="toggleUserModal()" class="w-full bg-slate-700 text-slate-300 text-xs py-2.5 rounded-xl font-semibold">Cerrar</button>
@@ -439,6 +440,7 @@
       "Otros":   { color: "#ef4444", items: ["Jugar", "Youtube", "Tocar música", "Vibecoding", "TV y Cine"] }
     };
 
+    let userList = JSON.parse(localStorage.getItem('tt_user_list')) || ['andres', 'andrea'];
     let currentUser = localStorage.getItem('tt_current_user') || 'andres';
 
     let categories = {};
@@ -471,6 +473,7 @@
       localStorage.setItem(getStorageKey('records'), JSON.stringify(records));
       localStorage.setItem(getStorageKey('goals'), JSON.stringify(goals));
       localStorage.setItem(getStorageKey('tasks'), JSON.stringify(tasks));
+      localStorage.setItem('tt_user_list', JSON.stringify(userList));
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -486,35 +489,58 @@
 
     /* GESTIÓN DE USUARIOS */
     function toggleUserModal() {
+      renderUserModalList();
       document.getElementById('user-modal').classList.toggle('hidden');
     }
 
     function updateUserDisplay() {
       const label = document.getElementById('user-name-label');
       const avatar = document.getElementById('user-avatar');
-      
-      if (currentUser === 'andrea') {
-        label.innerText = 'Andrea';
-        avatar.innerText = '👩';
-        document.getElementById('opt-user-andrea').className = "w-full p-3 rounded-xl border border-strava bg-orange-950/20 flex items-center justify-between font-bold text-sm text-white";
-        document.getElementById('opt-user-andres').className = "w-full p-3 rounded-xl border border-slate-700 bg-slate-900 flex items-center justify-between font-bold text-sm text-slate-400";
-        document.getElementById('check-user-andrea').classList.remove('hidden');
-        document.getElementById('check-user-andres').classList.add('hidden');
-      } else {
-        label.innerText = 'Andres';
-        avatar.innerText = '👤';
-        document.getElementById('opt-user-andres').className = "w-full p-3 rounded-xl border border-strava bg-orange-950/20 flex items-center justify-between font-bold text-sm text-white";
-        document.getElementById('opt-user-andrea').className = "w-full p-3 rounded-xl border border-slate-700 bg-slate-900 flex items-center justify-between font-bold text-sm text-slate-400";
-        document.getElementById('check-user-andres').classList.remove('hidden');
-        document.getElementById('check-user-andrea').classList.add('hidden');
+      const capitalized = currentUser.charAt(0).toUpperCase() + currentUser.slice(1);
+      label.innerText = capitalized;
+      avatar.innerText = (currentUser === 'andrea') ? '👩' : '👤';
+    }
+
+    function renderUserModalList() {
+      const container = document.getElementById('user-list-container');
+      let html = '';
+
+      userList.forEach(u => {
+        const isSelected = (u === currentUser);
+        const displayName = u.charAt(0).toUpperCase() + u.slice(1);
+        const icon = (u === 'andrea') ? '👩' : '👤';
+
+        html += `
+          <button onclick="switchUser('${u}')" class="w-full p-3 rounded-xl border flex items-center justify-between font-bold text-sm transition-all ${isSelected ? 'border-strava bg-orange-950/20 text-white' : 'border-slate-700 bg-slate-900 text-slate-400'}">
+            <span class="flex items-center gap-2"><span>${icon}</span> ${displayName}</span>
+            ${isSelected ? '<span class="text-strava font-bold">✓ Activo</span>' : ''}
+          </button>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function createNewUser() {
+      const input = document.getElementById('new-user-name');
+      const rawName = input.value.trim();
+      if (!rawName) {
+        alert('Por favor ingresa un nombre.');
+        return;
       }
+      const slug = rawName.toLowerCase().replace(/\s+/g, '');
+      if (userList.includes(slug)) {
+        alert('Este usuario ya existe.');
+        return;
+      }
+
+      userList.push(slug);
+      saveUserData();
+      input.value = '';
+      switchUser(slug);
     }
 
     function switchUser(newUser) {
-      if (currentUser === newUser) {
-        toggleUserModal();
-        return;
-      }
       if (timerInterval) clearInterval(timerInterval);
       currentUser = newUser;
       localStorage.setItem('tt_current_user', currentUser);
@@ -523,7 +549,7 @@
       populateActivitySelects();
       renderUI();
       if (activeTimer) startTimerInterval();
-      toggleUserModal();
+      document.getElementById('user-modal').classList.add('hidden');
     }
 
     function getActivityColor(key) {
@@ -569,7 +595,7 @@
       autoAssignCategory();
     }
 
-    /* MODAL DE CONFIGURACIÓN DE CATEGORÍAS */
+    /* MODAL DE PERSONALIZACIÓN DE CATEGORÍAS */
     function openCatModal() {
       renderCatModalContent();
       document.getElementById('cat-modal').classList.remove('hidden');
